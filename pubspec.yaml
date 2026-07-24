@@ -1,0 +1,48 @@
+name: zyvionix_pos
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.5+1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_blue_plus: ^2.3.10
+  blue_thermal_printer: ^1.2.3
+  esc_pos_utils_plus: ^2.0.4
+  printing: ^5.14.3
+  pdf: ^3.11.3
+  intl: ^0.20.2
+  google_fonts: ^6.3.2
+  flutter_slidable: ^4.0.3
+  permission_handler: ^12.0.3
+  share_plus: ^12.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.5.4
+  hive_generator: ^2.0.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/companylogoimage.jpeg"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/companylogoimage.jpeg
+    - assets/splashimage.png
+    - assets/bannerimage.png
