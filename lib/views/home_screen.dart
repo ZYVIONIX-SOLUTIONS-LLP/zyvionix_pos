@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/profile/profile_screen.dart';
 import '../database/hive_boxes.dart';
 import '../models/bill.dart';
-import '../constants/app_theme.dart';
 import 'billing/bill_preview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -49,55 +51,139 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 24),
-              _buildBanner(),
-              const SizedBox(height: 24),
-              _buildSummaryCards(),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C64F2).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFF1C64F2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   const Text(
-                    'Recent Bills',
+                    "Exit App",
                     style: TextStyle(
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E1E1E),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Text(
-                        'View All',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Colors.blue.shade700,
-                        size: 16,
-                      ),
-                    ],
-                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _buildRecentBills(),
-              const SizedBox(height: 100),
-            ],
+              content: const Text(
+                "Are you sure you want to exit the APP?",
+                style: TextStyle(color: Colors.black54, fontSize: 15),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              actions: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF1C64F2)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Color(0xFF1C64F2)),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1C64F2),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Exit"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FC),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 15),
+                _buildBanner(context),
+                const SizedBox(height: 24),
+                _buildSummaryCards(),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Recent Bills',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E1E1E),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'View All',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: Colors.blue.shade700,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildRecentBills(),
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
@@ -140,41 +226,275 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (context) => const ProfileScreen()),
             );
           },
-          child: const CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.primary,
-            backgroundImage: AssetImage('assets/splashimage.png'),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: const DecorationImage(
+                    image: AssetImage('assets/splashimage.png'),
+                    fit: BoxFit.cover,
+                  ),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ZYVIONIX',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E3A8A), // Dark blue
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    'SOLUTIONS',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBanner() {
+  Widget _buildBanner(BuildContext context) {
     return SizedBox(
       height: 170,
       child: PageView.builder(
         controller: _pageController,
-        itemCount: 3,
+        itemCount: 5,
         itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: const DecorationImage(
-                image: AssetImage('assets/bannerimage.png'),
-                fit: BoxFit.cover,
+          return _buildSingleBanner(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSingleBanner(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.read<BottomNavbarProvider>().setIndex(1);
+      },
+      child: Container(
+        height: 170,
+        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1C64F2), Color(0xFF3B82F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background decorative curves
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+            ),
+            Positioned(
+              right: 80,
+              bottom: -50,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+            ),
+
+            // Receipt Graphic on the right
+            Positioned(right: 20, bottom: 0, child: _buildReceiptGraphic()),
+
+            // Text and Button on the left
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Create New Bill',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tap once to start billing\nquick and easy',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.post_add_rounded,
+                          color: Colors.blue.shade700,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'START BILLING',
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: Colors.blue.shade700,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceiptGraphic() {
+    return SizedBox(
+      width: 100,
+      height: 135,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          // Main paper
+          Container(
+            width: 85,
+            height: 130,
+            margin: const EdgeInsets.only(bottom: 5),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
+                _buildReceiptLine(width: 55),
+                const SizedBox(height: 8),
+                _buildReceiptLine(width: 35),
+                const SizedBox(height: 16),
+                _buildReceiptLine(width: 65),
+                const SizedBox(height: 8),
+                _buildReceiptLine(width: 50),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildReceiptLine(width: 25),
+                    const SizedBox(width: 10),
+                    _buildReceiptLine(width: 25),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildReceiptLine(width: 25),
+                    const SizedBox(width: 10),
+                    _buildReceiptLine(width: 25),
+                  ],
                 ),
               ],
             ),
-          );
-        },
+          ),
+          // Curled bottom effect
+          Container(
+            width: 95,
+            height: 24,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.grey.shade300],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptLine({required double width}) {
+    return Container(
+      width: width,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
 import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
@@ -8,118 +11,203 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Account'),
-              _buildMenuCard(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
                 children: [
-                  _buildMenuItem(
-                    icon: Icons.receipt_long_rounded,
-                    iconColor: Colors.deepPurple,
-                    title: 'Bill History',
-                    subtitle: 'View all your past bills',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => BillHystory()),
-                      );
-                    },
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C64F2).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFF1C64F2),
+                    ),
                   ),
-                  _divider(),
-                  _buildMenuItem(
-                    icon: Icons.person_outline_rounded,
-                    iconColor: Colors.blue,
-                    title: 'Edit Profile',
-                    subtitle: 'Update your personal information',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditProfile()),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _buildMenuItem(
-                    icon: Icons.notifications_none_rounded,
-                    iconColor: Colors.orange,
-                    title: 'Notifications',
-                    subtitle: 'Manage notification preferences',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotificationScreen(),
-                        ),
-                      );
-                    },
+                  const SizedBox(width: 12),
+                  const Text(
+                    "Exit App",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E1E1E),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Legal'),
-              _buildMenuCard(
-                children: [
-                  _buildMenuItem(
-                    icon: Icons.privacy_tip_outlined,
-                    iconColor: Colors.teal,
-                    title: 'Privacy Policy',
-                    onTap: () {
-                      // Navigate to Privacy Policy screen
-                    },
-                  ),
-                  _divider(),
-                  _buildMenuItem(
-                    icon: Icons.description_outlined,
-                    iconColor: Colors.indigo,
-                    title: 'Terms & Conditions',
-                    onTap: () {
-                      // Navigate to Terms & Conditions screen
-                    },
-                  ),
-                  _divider(),
-                  _buildMenuItem(
-                    icon: Icons.help_outline_rounded,
-                    iconColor: Colors.green,
-                    title: 'Help & Support',
-                    onTap: () {
-                      // Navigate to Help & Support screen
-                    },
-                  ),
-                ],
+              content: const Text(
+                "Are you sure you want to exit the APP?",
+                style: TextStyle(color: Colors.black54, fontSize: 15),
               ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Session'),
-              _buildMenuCard(
-                children: [
-                  _buildMenuItem(
-                    icon: Icons.logout_rounded,
-                    iconColor: Colors.redAccent,
-                    title: 'Logout',
-                    titleColor: Colors.redAccent,
-                    showArrow: false,
-                    onTap: () {
-                      _showLogoutDialog(context);
-                    },
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              actions: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF1C64F2)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  'App Version 1.0.0',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Color(0xFF1C64F2)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-            ],
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1C64F2),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Exit"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+        }
+      },
+
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6FA),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Account'),
+                _buildMenuCard(
+                  children: [
+                    _buildMenuItem(
+                      icon: Icons.receipt_long_rounded,
+                      iconColor: Colors.deepPurple,
+                      title: 'Bill History',
+                      subtitle: 'View all your past bills',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BillHystory(),
+                          ),
+                        );
+                      },
+                    ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.person_outline_rounded,
+                      iconColor: Colors.blue,
+                      title: 'Edit Profile',
+                      subtitle: 'Update your personal information',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfile(),
+                          ),
+                        );
+                      },
+                    ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.notifications_none_rounded,
+                      iconColor: Colors.orange,
+                      title: 'Notifications',
+                      subtitle: 'Manage notification preferences',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Legal'),
+                _buildMenuCard(
+                  children: [
+                    _buildMenuItem(
+                      icon: Icons.privacy_tip_outlined,
+                      iconColor: Colors.teal,
+                      title: 'Privacy Policy',
+                      onTap: () {
+                        // Navigate to Privacy Policy screen
+                      },
+                    ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.description_outlined,
+                      iconColor: Colors.indigo,
+                      title: 'Terms & Conditions',
+                      onTap: () {
+                        // Navigate to Terms & Conditions screen
+                      },
+                    ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.help_outline_rounded,
+                      iconColor: Colors.green,
+                      title: 'Help & Support',
+                      onTap: () {
+                        // Navigate to Help & Support screen
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Session'),
+                _buildMenuCard(
+                  children: [
+                    _buildMenuItem(
+                      icon: Icons.logout_rounded,
+                      iconColor: Colors.redAccent,
+                      title: 'Logout',
+                      titleColor: Colors.redAccent,
+                      showArrow: false,
+                      onTap: () {
+                        _showLogoutDialog(context);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: Text(
+                    'App Version 1.0.0',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
       ),
@@ -144,141 +232,78 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Stack(
+      child: ValueListenableBuilder(
+        valueListenable: HiveBoxes.getSettingsBox().listenable(),
+        builder: (context, box, child) {
+          final userName = box.get('user_name', defaultValue: 'Melvin Cherian');
+          final userEmail = box.get(
+            'user_email',
+            defaultValue: 'melvincherian@gmail.com',
+          );
+
+          return Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.deepPurple.shade100,
-                    width: 3,
+              Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.deepPurple.shade100,
+                        width: 3,
+                      ),
+                    ),
+                    child: const CircleAvatar(
+                      radius: 48,
+                      backgroundColor: Color(0xFFEDEBFF),
+                      backgroundImage: AssetImage('assets/splashimage.png'),
+                    ),
                   ),
-                ),
-                child: const CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Color(0xFFEDEBFF),
-                  backgroundImage: NetworkImage('https://i.pravatar.cc/300'),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        // Handle image edit/upload
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                userName,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E1E1E),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    // Handle image edit/upload
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurple,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 4),
+              Text(
+                userEmail,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
             ],
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Melvin Cherian',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E1E1E),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'melvincherian@gmail.com',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
-
-  // // ---------- STATS ROW ----------
-  // Widget _buildStatsRow() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 20),
-  //     child: Row(
-  //       children: [
-  //         Expanded(
-  //           child: _statCard(
-  //             '24',
-  //             'Total Bills',
-  //             Icons.receipt_rounded,
-  //             Colors.deepPurple,
-  //           ),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: _statCard(
-  //             '₹12.4k',
-  //             'This Month',
-  //             Icons.currency_rupee_rounded,
-  //             Colors.orange,
-  //           ),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: _statCard(
-  //             '3',
-  //             'Pending',
-  //             Icons.pending_actions_rounded,
-  //             Colors.blue,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _statCard(String value, String label, IconData icon, Color color) {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(16),
-  //       boxShadow: const [
-  //         BoxShadow(
-  //           color: Color(0x0A000000),
-  //           blurRadius: 8,
-  //           offset: Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       children: [
-  //         Icon(icon, color: color, size: 22),
-  //         const SizedBox(height: 8),
-  //         Text(
-  //           value,
-  //           style: const TextStyle(
-  //             fontSize: 15,
-  //             fontWeight: FontWeight.bold,
-  //             color: Color(0xFF1E1E1E),
-  //           ),
-  //         ),
-  //         const SizedBox(height: 2),
-  //         Text(
-  //           label,
-  //           textAlign: TextAlign.center,
-  //           style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildSectionTitle(String title) {
     return Padding(

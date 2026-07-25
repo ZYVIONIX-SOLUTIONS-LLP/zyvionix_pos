@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
+import 'package:zyvionix_pos/views/products/product_list_screen.dart';
 import '../../controllers/bill_controller.dart';
 import '../../models/product.dart';
 import '../../constants/app_theme.dart';
 import '../../constants/static_data.dart';
 import 'cart_screen.dart';
-import '../products/add_edit_product_screen.dart';
 
 class BillingScreen extends StatefulWidget {
   const BillingScreen({super.key});
@@ -74,29 +74,38 @@ class _BillingScreenState extends State<BillingScreen> {
         centerTitle: !_isSearching,
         automaticallyImplyLeading: false,
         actions: [
-          if (_isSearching)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.black87),
-              onPressed: () {
-                setState(() {
-                  _isSearching = false;
-                  _searchQuery = '';
-                  _searchController.clear();
-                });
-              },
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.black87),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddEditProductScreen(),
-                  ),
-                );
-              },
-            ),
+          // if (_isSearching)
+          //   IconButton(
+          //     icon: const Icon(Icons.close, color: Colors.black87),
+          //     onPressed: () {
+          //       setState(() {
+          //         _isSearching = false;
+          //         _searchQuery = '';
+          //         _searchController.clear();
+          //       });
+          //     },
+          //   )
+          // else
+          //   IconButton(
+          //     icon: const Icon(Icons.add, color: Colors.black87),
+          //     onPressed: () {
+          //       Navigator.push(
+          //         context,
+          //         MaterialPageRoute(
+          //           builder: (_) => const AddEditProductScreen(),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          IconButton(
+            icon: const Icon(Icons.list_alt),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProductListScreen()),
+              );
+            },
+          ),
         ],
       ),
 
