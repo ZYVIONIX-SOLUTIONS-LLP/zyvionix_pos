@@ -15,8 +15,8 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
   String selectedCategory = "All";
-  Set<String> selectedProductNames = {};
 
   final List<Map<String, dynamic>> products = [
     {
@@ -64,146 +64,95 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   void dispose() {
     searchController.dispose();
+    searchFocusNode.dispose();
     super.dispose();
-  }
-
-  void _proceedToCart() {
-    final controller = context.read<BillController>();
-
-    // Add all selected products to the cart
-    for (var productName in selectedProductNames) {
-      final prodMap = products.firstWhere((p) => p["name"] == productName);
-      final product = Product.create(
-        name: prodMap["name"],
-        price: (prodMap["price"] as num).toDouble(),
-        category: prodMap["category"],
-      );
-      controller.addToCart(product);
-    }
-
-    // Clear selection so if they come back it's fresh (optional, but good UX)
-    setState(() {
-      selectedProductNames.clear();
-    });
-
-    // Navigate to Cart Screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CartScreen()),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = [
-      "All",
-      ...products.map((e) => e["category"] as String).toSet(),
-    ];
+    final controller = context.watch<BillController>();
 
-    final filteredProducts = products.where((product) {
-      final matchesQuery = product["name"].toLowerCase().contains(
-        searchController.text.toLowerCase(),
-      );
-      final matchesCategory =
-          selectedCategory == "All" || product["category"] == selectedCategory;
-      return matchesQuery && matchesCategory;
-    }).toList();
+    final filteredProducts = searchController.text.isEmpty
+        ? products.where((product) {
+            return controller.cart.any((item) => item.product.name == product["name"]);
+          }).toList()
+        : products.where((product) {
+            final matchesQuery = product["name"].toLowerCase().contains(
+              searchController.text.toLowerCase(),
+            );
+            final matchesCategory =
+                selectedCategory == "All" || product["category"] == selectedCategory;
+            return matchesQuery && matchesCategory;
+          }).toList();
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: selectedProductNames.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: _proceedToCart,
-              backgroundColor: const Color.fromARGB(255, 91, 91, 238),
-              elevation: 4,
-              icon: const Icon(
-                Icons.shopping_cart_checkout_rounded,
-                color: Colors.white,
-              ),
-              label: Text(
-                'Proceed (${selectedProductNames.length})',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            )
-          : null,
+      backgroundColor: const Color(0xFFF5F6FA),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'proceed',
+        onPressed: () {
+          // Hide keyboard when navigating to Cart
+          searchFocusNode.unfocus();
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CartScreen()),
+          );
+        },
+        backgroundColor: const Color(0xFF165FF2),
+        elevation: 4,
+        icon: const Icon(
+          Icons.shopping_cart_checkout_rounded,
+          color: Colors.white,
+        ),
+        label: Text(
+          'Proceed (${controller.cart.length})',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Delicious Food",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            "Discover & Order",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+              child: TextField(
+                controller: searchController,
+                focusNode: searchFocusNode,
+                onChanged: (value) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: "Search dishes, drinks...",
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: Colors.grey,
                   ),
-                  const SizedBox(height: 16),
-
-                  // Modern Search Bar
-                  TextField(
-                    controller: searchController,
-                    onChanged: (value) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: "Search dishes, drinks...",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Colors.grey,
-                      ),
-                      suffixIcon: searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(
-                                Icons.clear_rounded,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  searchController.clear();
-                                });
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                  suffixIcon: searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.clear_rounded,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              searchController.clear();
+                              // DO NOT unfocus here to keep keyboard open
+                              searchFocusNode.requestFocus();
+                            });
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
 
@@ -214,13 +163,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off_rounded,
+                            searchController.text.isEmpty
+                                ? Icons.search_rounded
+                                : Icons.search_off_rounded,
                             size: 64,
                             color: Colors.grey.shade400,
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            "No items found",
+                            searchController.text.isEmpty
+                                ? "Search for a product"
+                                : "No items found",
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey.shade600,
@@ -234,59 +187,65 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                       itemCount: filteredProducts.length,
                       itemBuilder: (context, index) {
-                        final product = filteredProducts[index];
-                        final isSelected = selectedProductNames.contains(
-                          product["name"],
-                        );
+                        final productMap = filteredProducts[index];
+                        final isInCart = controller.cart.any((item) => item.product.name == productMap["name"]);
 
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
+                          margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.blue.shade50
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            color: isInCart ? Colors.blue.shade50 : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected
-                                  ? Colors.blue
-                                  : Colors.transparent,
+                              color: isInCart ? Colors.blue : Colors.transparent,
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                             onTap: () {
+                              if (!isInCart) {
+                                final product = Product.create(
+                                  name: productMap["name"],
+                                  price: (productMap["price"] as num).toDouble(),
+                                  category: productMap["category"],
+                                );
+                                controller.addToCart(product);
+                              } else {
+                                final itemToRemove = controller.cart.firstWhere(
+                                  (item) => item.product.name == productMap["name"],
+                                );
+                                controller.removeFromCart(itemToRemove);
+                              }
+                              
                               setState(() {
-                                if (isSelected) {
-                                  selectedProductNames.remove(product["name"]);
-                                } else {
-                                  selectedProductNames.add(product["name"]);
-                                }
+                                searchController.clear();
+                                // Keep keyboard open!
+                                searchFocusNode.requestFocus();
                               });
                             },
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(8),
                               child: Row(
                                 children: [
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
-                                      product["image"],
-                                      width: 85,
-                                      height: 85,
+                                      productMap["image"],
+                                      width: 65,
+                                      height: 65,
                                       fit: BoxFit.cover,
                                       errorBuilder:
                                           (context, error, stackTrace) {
                                             return Container(
-                                              width: 85,
-                                              height: 85,
+                                              width: 65,
+                                              height: 65,
                                               color: Colors.orange.shade50,
                                               child: const Icon(
                                                 Icons.fastfood_rounded,
@@ -296,80 +255,59 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           },
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
-
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              product["name"],
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
+                                        Text(
+                                          productMap["name"],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                          ),
                                         ),
                                         const SizedBox(height: 4),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
+                                            horizontal: 6,
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
+                                            color: Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            product["category"],
+                                            productMap["category"],
                                             style: TextStyle(
-                                              fontSize: 11,
+                                              fontSize: 10,
                                               color: Colors.blue.shade700,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 6),
                                         Text(
-                                          "₹${product["price"]}",
+                                          "₹${productMap["price"]}",
                                           style: const TextStyle(
                                             color: Colors.black87,
                                             fontWeight: FontWeight.w800,
-                                            fontSize: 16,
+                                            fontSize: 14,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-
-                                  // Add Button Action
-                                  Container(
-                                    margin: const EdgeInsets.only(left: 8),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? Colors.green
-                                          : Colors.blue.shade700,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
+                                  if (isInCart)
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 12),
                                       child: Icon(
-                                        isSelected
-                                            ? Icons.check_rounded
-                                            : Icons.add_rounded,
-                                        color: Colors.white,
-                                        size: 20,
+                                        Icons.check_circle_rounded,
+                                        color: Colors.blue,
+                                        size: 24,
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),

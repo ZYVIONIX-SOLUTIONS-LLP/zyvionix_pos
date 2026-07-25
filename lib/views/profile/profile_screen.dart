@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
+import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
 import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
@@ -13,82 +15,9 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        final shouldExit = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1C64F2).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: Color(0xFF1C64F2),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    "Exit App",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1E1E),
-                    ),
-                  ),
-                ],
-              ),
-              content: const Text(
-                "Are you sure you want to exit the APP?",
-                style: TextStyle(color: Colors.black54, fontSize: 15),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1C64F2)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text(
-                    "Cancel",
-                    style: TextStyle(color: Color(0xFF1C64F2)),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1C64F2),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Exit"),
-                ),
-              ],
-            );
-          },
-        );
-
-        if (shouldExit == true) {
-          SystemNavigator.pop();
-        }
+        context.read<BottomNavbarProvider>().setIndex(0);
       },
 
       child: Scaffold(
@@ -217,7 +146,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+      padding: const EdgeInsets.only(top: 16, bottom: 30, left: 20, right: 20),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -232,75 +161,94 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: ValueListenableBuilder(
-        valueListenable: HiveBoxes.getSettingsBox().listenable(),
-        builder: (context, box, child) {
-          final userName = box.get('user_name', defaultValue: 'Melvin Cherian');
-          final userEmail = box.get(
-            'user_email',
-            defaultValue: 'melvincherian@gmail.com',
-          );
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Align(
+            alignment: Alignment.topLeft,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+              onPressed: () {
+                context.read<BottomNavbarProvider>().setIndex(0);
+              },
+            ),
+          ),
+          ValueListenableBuilder(
+            valueListenable: HiveBoxes.getSettingsBox().listenable(),
+            builder: (context, box, child) {
+              final userName = box.get(
+                'user_name',
+                defaultValue: 'Melvin Cherian',
+              );
+              final userEmail = box.get(
+                'user_email',
+                defaultValue: 'melvincherian@gmail.com',
+              );
 
-          return Column(
-            children: [
-              Stack(
+              return Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.deepPurple.shade100,
-                        width: 3,
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.deepPurple.shade100,
+                            width: 3,
+                          ),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 48,
+                          backgroundColor: Color(0xFFEDEBFF),
+                          backgroundImage: AssetImage('assets/splashimage.png'),
+                        ),
                       ),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 48,
-                      backgroundColor: Color(0xFFEDEBFF),
-                      backgroundImage: AssetImage('assets/splashimage.png'),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            // Handle image edit/upload
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    userName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E1E1E),
                     ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        // Handle image edit/upload
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.deepPurple,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    userEmail,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
                 ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                userName,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E1E1E),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                userEmail,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }

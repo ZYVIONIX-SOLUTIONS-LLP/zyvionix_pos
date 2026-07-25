@@ -5,7 +5,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
-import 'package:zyvionix_pos/views/profile/profile_screen.dart';
 import '../database/hive_boxes.dart';
 import '../models/bill.dart';
 import 'billing/bill_preview_screen.dart';
@@ -221,10 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            );
+            context.read<BottomNavbarProvider>().setIndex(2);
           },
           child: Row(
             children: [
@@ -249,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E3A8A), // Dark blue
+                      color: Color(0xFF1E3A8A),
                       letterSpacing: 0.5,
                     ),
                   ),
