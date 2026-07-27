@@ -8,6 +8,7 @@ import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
 import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
+import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -396,7 +397,11 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
             },
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
