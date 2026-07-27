@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
-import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
+import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'constants/app_theme.dart';
 import 'database/hive_boxes.dart';
 import 'controllers/product_controller.dart';
@@ -67,9 +67,9 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
   Future<void> _initApp() async {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const NavbarScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     }
   }
 

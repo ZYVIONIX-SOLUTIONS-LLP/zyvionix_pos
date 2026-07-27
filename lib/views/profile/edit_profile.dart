@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/widgets/custom_text_field.dart';
 import 'package:zyvionix_pos/widgets/primary_button.dart';
@@ -16,6 +19,9 @@ class _EditProfileState extends State<EditProfile> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
 
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +34,26 @@ class _EditProfileState extends State<EditProfile> {
     _phoneController = TextEditingController(
       text: _box.get('user_phone', defaultValue: '9961593179'),
     );
+
+    final imagePath = _box.get('profile_image');
+    if (imagePath != null && File(imagePath).existsSync()) {
+      _profileImage = File(imagePath);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (image != null) {
+      setState(() {
+        _profileImage = File(image.path);
+      });
+
+      _box.put('profile_image', image.path);
+    }
   }
 
   @override
@@ -92,17 +118,22 @@ class _EditProfileState extends State<EditProfile> {
                           width: 3,
                         ),
                       ),
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 50,
-                        backgroundColor: Color(0xFFEDEBFF),
-                        backgroundImage: AssetImage('assets/splashimage.png'),
+                        backgroundColor: const Color(0xFFEDEBFF),
+                        backgroundImage: _profileImage != null
+                            ? FileImage(_profileImage!)
+                            : const AssetImage('assets/splashimage.png')
+                                  as ImageProvider,
                       ),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          _pickImage();
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(

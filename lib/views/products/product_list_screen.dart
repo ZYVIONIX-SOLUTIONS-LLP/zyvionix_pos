@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:zyvionix_pos/models/product.dart';
 import 'package:zyvionix_pos/views/billing/cart_screen.dart';
+import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -74,14 +75,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     final filteredProducts = searchController.text.isEmpty
         ? products.where((product) {
-            return controller.cart.any((item) => item.product.name == product["name"]);
+            return controller.cart.any(
+              (item) => item.product.name == product["name"],
+            );
           }).toList()
         : products.where((product) {
             final matchesQuery = product["name"].toLowerCase().contains(
               searchController.text.toLowerCase(),
             );
             final matchesCategory =
-                selectedCategory == "All" || product["category"] == selectedCategory;
+                selectedCategory == "All" ||
+                product["category"] == selectedCategory;
             return matchesQuery && matchesCategory;
           }).toList();
 
@@ -91,7 +95,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'proceed',
         onPressed: () {
-          // Hide keyboard when navigating to Cart
           searchFocusNode.unfocus();
           Navigator.push(
             context,
@@ -119,43 +122,68 @@ class _ProductListScreenState extends State<ProductListScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               color: Colors.white,
-              child: TextField(
-                controller: searchController,
-                focusNode: searchFocusNode,
-                onChanged: (value) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: "Search dishes, drinks...",
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Colors.grey,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      focusNode: searchFocusNode,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: "Search dishes, drinks...",
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Colors.grey,
+                        ),
+                        suffixIcon: searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear_rounded,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    searchController.clear();
+                                    searchFocusNode.requestFocus();
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
                   ),
-                  suffixIcon: searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(
-                            Icons.clear_rounded,
-                            color: Colors.grey,
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1EA1F2).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.add, color: Color(0xFF1EA1F2)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddEditProductScreen(),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              searchController.clear();
-                              // DO NOT unfocus here to keep keyboard open
-                              searchFocusNode.requestFocus();
-                            });
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-
             Expanded(
               child: filteredProducts.isEmpty
                   ? Center(
@@ -188,15 +216,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       itemCount: filteredProducts.length,
                       itemBuilder: (context, index) {
                         final productMap = filteredProducts[index];
-                        final isInCart = controller.cart.any((item) => item.product.name == productMap["name"]);
+                        final isInCart = controller.cart.any(
+                          (item) => item.product.name == productMap["name"],
+                        );
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: isInCart ? Colors.blue.shade50 : Colors.white,
+                            color: isInCart
+                                ? Colors.blue.shade50
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isInCart ? Colors.blue : Colors.transparent,
+                              color: isInCart
+                                  ? Colors.blue
+                                  : Colors.transparent,
                               width: 1.5,
                             ),
                             boxShadow: [
@@ -213,17 +247,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               if (!isInCart) {
                                 final product = Product.create(
                                   name: productMap["name"],
-                                  price: (productMap["price"] as num).toDouble(),
+                                  price: (productMap["price"] as num)
+                                      .toDouble(),
                                   category: productMap["category"],
                                 );
                                 controller.addToCart(product);
                               } else {
                                 final itemToRemove = controller.cart.firstWhere(
-                                  (item) => item.product.name == productMap["name"],
+                                  (item) =>
+                                      item.product.name == productMap["name"],
                                 );
                                 controller.removeFromCart(itemToRemove);
                               }
-                              
+
                               setState(() {
                                 searchController.clear();
                                 // Keep keyboard open!
@@ -276,7 +312,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             productMap["category"],

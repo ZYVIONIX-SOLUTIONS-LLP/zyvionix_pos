@@ -1,180 +1,50 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
-// import 'package:zyvionix_pos/views/billing/billing_screen.dart';
-// import 'package:zyvionix_pos/views/home_screen.dart';
-// import 'package:zyvionix_pos/views/profile/profile_screen.dart';
-
-// class NavbarScreen extends StatelessWidget {
-//   const NavbarScreen({super.key});
-
-//   static const List<Widget> _pages = [
-//     HomeScreen(),
-//     BillingScreen(),
-//     ProfileScreen(),
-//   ];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final navProvider = context.watch<BottomNavbarProvider>();
-
-//     final currentIndex = navProvider.currentIndex;
-
-//     final bool showNavBar = currentIndex != 1;
-
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       extendBody: true,
-//       body: _pages[navProvider.currentIndex],
-
-//       // bottomNavigationBar: const CustomBottomNavBar(),
-//       bottomNavigationBar: showNavBar ? const CustomBottomNavBar() : null,
-//     );
-//   }
-// }
-
-// class CustomBottomNavBar extends StatelessWidget {
-//   const CustomBottomNavBar({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final navProvider = context.watch<BottomNavbarProvider>();
-//     final currentIndex = navProvider.currentIndex;
-
-//     return SizedBox(
-//       height: 90,
-//       child: Stack(
-//         alignment: Alignment.bottomCenter,
-//         clipBehavior: Clip.none,
-//         children: [
-//           Container(
-//             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-//             height: 65,
-//             decoration: BoxDecoration(
-//               color: const Color(0xFF1E1E1E),
-//               borderRadius: BorderRadius.circular(18),
-//               boxShadow: [
-//                 BoxShadow(
-//                   color: Colors.black.withOpacity(0.2),
-//                   blurRadius: 10,
-//                   offset: const Offset(0, 5),
-//                 ),
-//               ],
-//             ),
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//               children: [
-//                 _NavItem(
-//                   icon: Icons.home_rounded,
-//                   label: 'Home',
-//                   isSelected: currentIndex == 0,
-//                   onTap: () => navProvider.setIndex(0),
-//                 ),
-//                 const SizedBox(width: 60),
-//                 _NavItem(
-//                   icon: Icons.person_rounded,
-//                   label: 'Profile',
-//                   isSelected: currentIndex == 2,
-//                   onTap: () => navProvider.setIndex(2),
-//                 ),
-//               ],
-//             ),
-//           ),
-
-//           Positioned(
-//             bottom: 40,
-//             child: GestureDetector(
-//               onTap: () => navProvider.setIndex(1),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Container(
-//                     height: 65,
-//                     width: 65,
-//                     decoration: BoxDecoration(
-//                       shape: BoxShape.circle,
-//                       color: Colors.deepPurple,
-//                       border: Border.all(color: Colors.white, width: 4),
-//                       boxShadow: [
-//                         BoxShadow(
-//                           color: Colors.deepPurple.withOpacity(0.4),
-//                           blurRadius: 12,
-//                           offset: const Offset(0, 4),
-//                         ),
-//                       ],
-//                     ),
-//                     child: const Icon(
-//                       Icons.receipt_long_rounded,
-//                       color: Colors.white,
-//                       size: 30,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class _NavItem extends StatelessWidget {
-//   final IconData icon;
-//   final String label;
-//   final bool isSelected;
-//   final VoidCallback onTap;
-
-//   const _NavItem({
-//     required this.icon,
-//     required this.label,
-//     required this.isSelected,
-//     required this.onTap,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final color = isSelected
-//         ? const Color.fromARGB(255, 88, 73, 253)
-//         : Colors.white70;
-
-//     return GestureDetector(
-//       onTap: onTap,
-//       behavior: HitTestBehavior.opaque,
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           Icon(icon, color: color, size: 24),
-//           const SizedBox(height: 2),
-//           Text(
-//             label,
-//             style: TextStyle(
-//               color: color,
-//               fontSize: 11,
-//               fontWeight: FontWeight.w500,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/billing/billing_screen.dart';
 import 'package:zyvionix_pos/views/home_screen.dart';
 import 'package:zyvionix_pos/views/profile/profile_screen.dart';
+import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 
-class NavbarScreen extends StatelessWidget {
+class NavbarScreen extends StatefulWidget {
   const NavbarScreen({super.key});
 
+  @override
+  State<NavbarScreen> createState() => _NavbarScreenState();
+}
+
+class _NavbarScreenState extends State<NavbarScreen> {
   static const List<Widget> _pages = [
     HomeScreen(),
     BillingScreen(),
     ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkSubscription();
+    });
+  }
+
+  Future<void> _checkSubscription() async {
+    final box = HiveBoxes.getSettingsBox();
+    final storageType = box.get('storageType', defaultValue: 'Device Storage');
+    final hasShown = box.get('subscriptionModalShown', defaultValue: false);
+
+    if (storageType == 'Cloud Storage' && !hasShown) {
+      await box.put('subscriptionModalShown', true);
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const SubscriptionModal(),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +58,7 @@ class NavbarScreen extends StatelessWidget {
       body: _pages[currentIndex],
       floatingActionButton: showNavBar
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF165FF2), // Blue from image
+              backgroundColor: const Color(0xFF165FF2),
               shape: const CircleBorder(),
               elevation: 4,
               onPressed: () => navProvider.setIndex(1),
@@ -218,12 +88,11 @@ class NavbarScreen extends StatelessWidget {
                       isSelected: currentIndex == 0,
                       onTap: () => navProvider.setIndex(0),
                     ),
-                    // Space for FAB and "New Bill" text
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const SizedBox(height: 28), // pushes text to bottom
+                        const SizedBox(height: 28),
                         Text(
                           'New Bill',
                           style: TextStyle(
@@ -235,7 +104,7 @@ class NavbarScreen extends StatelessWidget {
                       ],
                     ),
                     _buildNavItem(
-                      icon: Icons.menu_rounded, // Changed to Reports icon
+                      icon: Icons.menu_rounded,
                       label: 'Menu',
                       isSelected: currentIndex == 2,
                       onTap: () => navProvider.setIndex(2),

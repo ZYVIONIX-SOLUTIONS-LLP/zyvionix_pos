@@ -7,6 +7,8 @@ import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
 import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
+import 'package:zyvionix_pos/views/profile/help_screen.dart';
+import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -77,6 +79,20 @@ class ProfileScreen extends StatelessWidget {
                         );
                       },
                     ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.cloud_circle_rounded,
+                      iconColor: const Color(0xFF1EA1F2),
+                      title: 'Subscription Plans',
+                      subtitle: 'View and upgrade cloud plans',
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          builder: (context) => const SubscriptionModal(),
+                        );
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -87,18 +103,14 @@ class ProfileScreen extends StatelessWidget {
                       icon: Icons.privacy_tip_outlined,
                       iconColor: Colors.teal,
                       title: 'Privacy Policy',
-                      onTap: () {
-                        // Navigate to Privacy Policy screen
-                      },
+                      onTap: () {},
                     ),
                     _divider(),
                     _buildMenuItem(
                       icon: Icons.description_outlined,
                       iconColor: Colors.indigo,
                       title: 'Terms & Conditions',
-                      onTap: () {
-                        // Navigate to Terms & Conditions screen
-                      },
+                      onTap: () {},
                     ),
                     _divider(),
                     _buildMenuItem(
@@ -106,7 +118,10 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: Colors.green,
                       title: 'Help & Support',
                       onTap: () {
-                        // Navigate to Help & Support screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => HelpScreen()),
+                        );
                       },
                     ),
                   ],
@@ -210,9 +225,7 @@ class ProfileScreen extends StatelessWidget {
                         bottom: 0,
                         right: 0,
                         child: GestureDetector(
-                          onTap: () {
-                            // Handle image edit/upload
-                          },
+                          onTap: () {},
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(

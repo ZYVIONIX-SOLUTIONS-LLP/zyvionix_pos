@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
@@ -20,6 +22,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late TextEditingController _priceController;
   late TextEditingController _categoryController;
   late TextEditingController _descriptionController;
+  String? _imagePath;
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -28,6 +33,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
     _categoryController = TextEditingController(text: widget.product?.category ?? '');
     _descriptionController = TextEditingController(text: widget.product?.description ?? '');
+    _imagePath = widget.product?.imagePath;
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _imagePath = image.path;
+      });
+    }
   }
 
   @override
@@ -55,6 +70,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           price: price,
           category: category,
           description: description,
+          imagePath: _imagePath,
         );
         controller.addProduct(newProduct);
       } else {
@@ -63,6 +79,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         widget.product!.price = price;
         widget.product!.category = category;
         widget.product!.description = description;
+        widget.product!.imagePath = _imagePath;
         controller.updateProduct(widget.product!);
       }
 
@@ -84,6 +101,36 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    height: 120,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(16),
+                      image: _imagePath != null
+                          ? DecorationImage(
+                              image: FileImage(File(_imagePath!)),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: _imagePath == null
+                        ? const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text('Add Photo', style: TextStyle(color: Colors.grey)),
+                            ],
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               CustomTextField(
                 label: 'Item Name',
                 hint: 'Enter item name',
