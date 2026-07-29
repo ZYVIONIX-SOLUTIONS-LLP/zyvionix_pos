@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/products/product_list_screen.dart';
 import '../../controllers/bill_controller.dart';
+import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
 import '../../constants/app_theme.dart';
-import '../../constants/static_data.dart';
 import 'cart_screen.dart';
 
 class BillingScreen extends StatefulWidget {
@@ -17,19 +18,11 @@ class BillingScreen extends StatefulWidget {
 
 class _BillingScreenState extends State<BillingScreen> {
   String _selectedCategory = 'All';
-  final Set<String> _selectedProductNames = {};
+  final Set<String> _selectedProductIds = {};
 
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-
-  final List<String> _categories = [
-    'All',
-    'Drinks',
-    'Snacks',
-    'Meals',
-    'Desserts',
-  ];
 
   @override
   void dispose() {
@@ -39,6 +32,16 @@ class _BillingScreenState extends State<BillingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final products = context.watch<ProductController>().products;
+    
+    // Dynamically build categories
+    final Set<String> uniqueCategories = {'All'};
+    for (var p in products) {
+      final cat = (p.category?.isNotEmpty == true) ? p.category! : 'Uncategorized';
+      uniqueCategories.add(cat);
+    }
+    final categories = uniqueCategories.toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
@@ -46,7 +49,7 @@ class _BillingScreenState extends State<BillingScreen> {
           onPressed: () {
             context.read<BottomNavbarProvider>().setIndex(0);
           },
-          icon: Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios),
         ),
         title: _isSearching
             ? TextField(
@@ -74,29 +77,6 @@ class _BillingScreenState extends State<BillingScreen> {
         centerTitle: !_isSearching,
         automaticallyImplyLeading: false,
         actions: [
-          // if (_isSearching)
-          //   IconButton(
-          //     icon: const Icon(Icons.close, color: Colors.black87),
-          //     onPressed: () {
-          //       setState(() {
-          //         _isSearching = false;
-          //         _searchQuery = '';
-          //         _searchController.clear();
-          //       });
-          //     },
-          //   )
-          // else
-          //   IconButton(
-          //     icon: const Icon(Icons.add, color: Colors.black87),
-          //     onPressed: () {
-          //       Navigator.push(
-          //         context,
-          //         MaterialPageRoute(
-          //           builder: (_) => const AddEditProductScreen(),
-          //         ),
-          //       );
-          //     },
-          //   ),
           IconButton(
             icon: const Icon(Icons.list_alt),
             onPressed: () {
@@ -108,37 +88,36 @@ class _BillingScreenState extends State<BillingScreen> {
           ),
         ],
       ),
-
       body: Stack(
         children: [
           Column(
             children: [
-              if (!_isSearching) _buildCategories(),
+              if (!_isSearching) _buildCategories(categories),
               Expanded(
                 child: _isSearching
-                    ? _buildSearchResults()
-                    : _buildProductsGrid(),
+                    ? _buildSearchResults(products)
+                    : _buildProductsGrid(products),
               ),
               const SizedBox(height: 100),
             ],
           ),
-          if (_selectedProductNames.isNotEmpty)
-            Positioned(left: 0, right: 0, bottom: 25, child: _buildBottomBar()),
+          if (_selectedProductIds.isNotEmpty)
+            Positioned(left: 0, right: 0, bottom: 25, child: _buildBottomBar(products)),
         ],
       ),
     );
   }
 
-  Widget _buildCategories() {
+  Widget _buildCategories(List<String> categories) {
     return Container(
       height: 60,
       color: Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        itemCount: _categories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final category = _categories[index];
+          final category = categories[index];
           final isSelected = _selectedCategory == category;
           return Padding(
             padding: const EdgeInsets.only(right: 10.0),
@@ -169,10 +148,10 @@ class _BillingScreenState extends State<BillingScreen> {
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(List<Product> products) {
     final query = _searchQuery.toLowerCase();
-    final results = StaticData.products.where((p) {
-      final name = (p['name'] as String).toLowerCase();
+    final results = products.where((p) {
+      final name = p.name.toLowerCase();
       return name.contains(query);
     }).toList();
 
@@ -190,7 +169,7 @@ class _BillingScreenState extends State<BillingScreen> {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final item = results[index];
-        final isSelected = _selectedProductNames.contains(item['name']);
+        final isSelected = _selectedProductIds.contains(item.id);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -203,21 +182,41 @@ class _BillingScreenState extends State<BillingScreen> {
             contentPadding: const EdgeInsets.all(12.0),
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                item['image'],
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.fastfood, color: Colors.grey),
-                ),
-              ),
+              child: item.imagePath != null
+                  ? (item.imagePath!.startsWith('http')
+                      ? Image.network(
+                          item.imagePath!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.fastfood, color: Colors.grey),
+                          ),
+                        )
+                      : Image.file(
+                          File(item.imagePath!),
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.fastfood, color: Colors.grey),
+                          ),
+                        ))
+                  : Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.fastfood, color: Colors.grey),
+                    ),
             ),
             title: Text(
-              item['name'],
+              item.name,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -226,7 +225,7 @@ class _BillingScreenState extends State<BillingScreen> {
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: Text(
-                '₹${item['price'].toStringAsFixed(0)}',
+                '₹${item.price.toStringAsFixed(0)}',
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -239,9 +238,9 @@ class _BillingScreenState extends State<BillingScreen> {
             onTap: () {
               setState(() {
                 if (isSelected) {
-                  _selectedProductNames.remove(item['name']);
+                  _selectedProductIds.remove(item.id);
                 } else {
-                  _selectedProductNames.add(item['name']);
+                  _selectedProductIds.add(item.id);
                 }
               });
             },
@@ -251,14 +250,15 @@ class _BillingScreenState extends State<BillingScreen> {
     );
   }
 
-  Widget _buildProductsGrid() {
-    final products = _selectedCategory == 'All'
-        ? StaticData.products
-        : StaticData.products
-              .where((p) => p['category'] == _selectedCategory)
-              .toList();
+  Widget _buildProductsGrid(List<Product> products) {
+    final filteredProducts = _selectedCategory == 'All'
+        ? products
+        : products.where((p) {
+            final cat = (p.category?.isNotEmpty == true) ? p.category! : 'Uncategorized';
+            return cat == _selectedCategory;
+          }).toList();
 
-    if (products.isEmpty) {
+    if (filteredProducts.isEmpty) {
       return const Center(
         child: Text(
           'No products in this category.',
@@ -275,18 +275,18 @@ class _BillingScreenState extends State<BillingScreen> {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: products.length,
+      itemCount: filteredProducts.length,
       itemBuilder: (context, index) {
-        final item = products[index];
-        final isSelected = _selectedProductNames.contains(item['name']);
+        final item = filteredProducts[index];
+        final isSelected = _selectedProductIds.contains(item.id);
 
         return InkWell(
           onTap: () {
             setState(() {
               if (isSelected) {
-                _selectedProductNames.remove(item['name']);
+                _selectedProductIds.remove(item.id);
               } else {
-                _selectedProductNames.add(item['name']);
+                _selectedProductIds.add(item.id);
               }
             });
           },
@@ -318,20 +318,44 @@ class _BillingScreenState extends State<BillingScreen> {
                           topLeft: Radius.circular(0),
                           topRight: Radius.circular(0),
                         ),
-                        child: Image.network(
-                          item['image'],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey.shade200,
-                              child: const Icon(
-                                Icons.fastfood,
-                                color: Colors.grey,
-                                size: 30,
+                        child: item.imagePath != null
+                            ? (item.imagePath!.startsWith('http')
+                                ? Image.network(
+                                    item.imagePath!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(
+                                          Icons.fastfood,
+                                          color: Colors.grey,
+                                          size: 30,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Image.file(
+                                    File(item.imagePath!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(
+                                          Icons.fastfood,
+                                          color: Colors.grey,
+                                          size: 30,
+                                        ),
+                                      );
+                                    },
+                                  ))
+                            : Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(
+                                  Icons.fastfood,
+                                  color: Colors.grey,
+                                  size: 30,
+                                ),
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ),
                     Padding(
@@ -339,7 +363,7 @@ class _BillingScreenState extends State<BillingScreen> {
                       child: Column(
                         children: [
                           Text(
-                            item['name'],
+                            item.name,
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -351,7 +375,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '₹${item['price'].toStringAsFixed(0)}',
+                            '₹${item.price.toStringAsFixed(0)}',
                             style: const TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
@@ -388,7 +412,7 @@ class _BillingScreenState extends State<BillingScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(List<Product> products) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
@@ -414,18 +438,13 @@ class _BillingScreenState extends State<BillingScreen> {
           final billController = context.read<BillController>();
           billController.clearCart();
 
-          for (final name in _selectedProductNames) {
-            final itemData = StaticData.products.firstWhere(
-              (p) => p['name'] == name,
-            );
-            final product = Product(
-              id: itemData['name'],
-              name: itemData['name'],
-              price: itemData['price'],
-              category: itemData['category'],
-              createdAt: DateTime.now(),
-            );
-            billController.addToCart(product);
+          for (final id in _selectedProductIds) {
+            try {
+              final product = products.firstWhere((p) => p.id == id);
+              billController.addToCart(product);
+            } catch (e) {
+              // Ignore if product not found
+            }
           }
 
           Navigator.push(
@@ -434,10 +453,10 @@ class _BillingScreenState extends State<BillingScreen> {
           ).then((_) {
             if (mounted) {
               setState(() {
-                _selectedProductNames.clear();
+                _selectedProductIds.clear();
                 final currentCart = context.read<BillController>().cart;
                 for (var item in currentCart) {
-                  _selectedProductNames.add(item.product.name);
+                  _selectedProductIds.add(item.product.id);
                 }
               });
             }
@@ -447,7 +466,7 @@ class _BillingScreenState extends State<BillingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Proceed with ${_selectedProductNames.length} item(s)',
+              'Proceed with ${_selectedProductIds.length} item(s)',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,

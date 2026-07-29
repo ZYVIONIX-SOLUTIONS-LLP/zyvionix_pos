@@ -22,12 +22,12 @@ class BillAdapter extends TypeAdapter<Bill> {
       date: fields[2] as DateTime,
       items: (fields[3] as List).cast<BillItem>(),
       subTotal: fields[4] as double,
-      discount: fields[5] as double,
-      tax: fields[6] as double,
-      grandTotal: fields[7] as double,
-      paymentMethod: fields[8] as String,
-      customerName: fields[9] as String?,
-      customerPhone: fields[10] as String?,
+      tax: fields[5] as double,
+      grandTotal: fields[6] as double,
+      paymentMethod: fields[7] as String,
+      companyName: fields[8] as String?,
+      customerPhone: fields[9] as String?,
+      timestamp: fields[10] as DateTime,
     );
   }
 
@@ -46,17 +46,17 @@ class BillAdapter extends TypeAdapter<Bill> {
       ..writeByte(4)
       ..write(obj.subTotal)
       ..writeByte(5)
-      ..write(obj.discount)
-      ..writeByte(6)
       ..write(obj.tax)
-      ..writeByte(7)
+      ..writeByte(6)
       ..write(obj.grandTotal)
-      ..writeByte(8)
+      ..writeByte(7)
       ..write(obj.paymentMethod)
+      ..writeByte(8)
+      ..write(obj.companyName)
       ..writeByte(9)
-      ..write(obj.customerName)
+      ..write(obj.customerPhone)
       ..writeByte(10)
-      ..write(obj.customerPhone);
+      ..write(obj.timestamp);
   }
 
   @override

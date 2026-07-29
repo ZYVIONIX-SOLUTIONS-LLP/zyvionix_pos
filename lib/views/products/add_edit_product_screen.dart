@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:floating_snackbar/floating_snackbar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/product_controller.dart';
@@ -18,10 +19,11 @@ class AddEditProductScreen extends StatefulWidget {
 
 class _AddEditProductScreenState extends State<AddEditProductScreen> {
   final _formKey = GlobalKey<FormState>();
+
   late TextEditingController _nameController;
   late TextEditingController _priceController;
   late TextEditingController _categoryController;
-  late TextEditingController _descriptionController;
+
   String? _imagePath;
 
   final ImagePicker _picker = ImagePicker();
@@ -29,15 +31,21 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   @override
   void initState() {
     super.initState();
+
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _categoryController = TextEditingController(text: widget.product?.category ?? '');
-    _descriptionController = TextEditingController(text: widget.product?.description ?? '');
+    _priceController = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: widget.product?.category ?? '',
+    );
+
     _imagePath = widget.product?.imagePath;
   }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
     if (image != null) {
       setState(() {
         _imagePath = image.path;
@@ -50,52 +58,63 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _nameController.dispose();
     _priceController.dispose();
     _categoryController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
   void _saveProduct() {
-    if (_formKey.currentState!.validate()) {
-      final controller = context.read<ProductController>();
-      
-      final name = _nameController.text.trim();
-      final price = double.parse(_priceController.text.trim());
-      final category = _categoryController.text.trim();
-      final description = _descriptionController.text.trim();
+    if (!_formKey.currentState!.validate()) return;
 
-      if (widget.product == null) {
-        // Add new
-        final newProduct = Product.create(
-          name: name,
-          price: price,
-          category: category,
-          description: description,
-          imagePath: _imagePath,
-        );
-        controller.addProduct(newProduct);
-      } else {
-        // Edit existing
-        widget.product!.name = name;
-        widget.product!.price = price;
-        widget.product!.category = category;
-        widget.product!.description = description;
-        widget.product!.imagePath = _imagePath;
-        controller.updateProduct(widget.product!);
-      }
+    final controller = context.read<ProductController>();
 
-      Navigator.pop(context);
+    final name = _nameController.text.trim();
+    final price = double.parse(_priceController.text.trim());
+    final category = _categoryController.text.trim();
+
+    String message;
+
+    if (widget.product == null) {
+      final newProduct = Product.create(
+        name: name,
+        price: price,
+        category: category.isEmpty ? null : category,
+        imagePath: _imagePath,
+      );
+
+      controller.addProduct(newProduct);
+      message = "Product added successfully!";
+    } else {
+      widget.product!.name = name;
+      widget.product!.price = price;
+      widget.product!.category = category.isEmpty ? null : category;
+      widget.product!.imagePath = _imagePath;
+
+      controller.updateProduct(widget.product!);
+      message = "Product updated successfully!";
     }
+
+    floatingSnackBar(
+      message: message,
+      context: context,
+      textColor: Colors.white,
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 2),
+    );
+
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.product != null;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit Item' : 'Add Item'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Item' : 'Add Item')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -112,7 +131,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       borderRadius: BorderRadius.circular(16),
                       image: _imagePath != null
                           ? DecorationImage(
-                              image: FileImage(File(_imagePath!)),
+                              image: _imagePath!.startsWith('http')
+                                  ? NetworkImage(_imagePath!) as ImageProvider
+                                  : FileImage(File(_imagePath!)),
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -121,9 +142,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         ? const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                              Icon(
+                                Icons.add_a_photo,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
                               SizedBox(height: 8),
-                              Text('Add Photo', style: TextStyle(color: Colors.grey)),
+                              Text(
+                                'Add Photo',
+                                style: TextStyle(color: Colors.grey),
+                              ),
                             ],
                           )
                         : null,
@@ -146,14 +174,18 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 label: 'Price (₹)',
                 hint: 'Enter price',
                 controller: _priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter a price';
                   }
+
                   if (double.tryParse(value) == null) {
                     return 'Please enter a valid number';
                   }
+
                   return null;
                 },
               ),
@@ -162,17 +194,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 hint: 'e.g. Food, Drinks',
                 controller: _categoryController,
               ),
-              CustomTextField(
-                label: 'Description (Optional)',
-                hint: 'Enter description',
-                controller: _descriptionController,
-                maxLines: 3,
-              ),
               const SizedBox(height: 24),
-              PrimaryButton(
-                text: 'Save',
-                onPressed: _saveProduct,
-              ),
+              PrimaryButton(text: 'Save', onPressed: _saveProduct),
             ],
           ),
         ),

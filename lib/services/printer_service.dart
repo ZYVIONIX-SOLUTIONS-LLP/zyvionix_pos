@@ -74,8 +74,8 @@ class BluetoothPrinterService {
       ),
     ]);
 
-    if (bill.customerName != null) {
-      bytes += generator.text('Customer: ${bill.customerName}');
+    if (bill.companyName != null) {
+      bytes += generator.text('Company: ${bill.companyName}');
     }
 
     bytes += generator.hr();
@@ -132,16 +132,7 @@ class BluetoothPrinterService {
       ),
     ]);
 
-    if (bill.discount > 0) {
-      bytes += generator.row([
-        PosColumn(text: 'Discount', width: 6),
-        PosColumn(
-          text: bill.discount.toStringAsFixed(2),
-          width: 6,
-          styles: const PosStyles(align: PosAlign.right),
-        ),
-      ]);
-    }
+
 
     if (bill.tax > 0) {
       bytes += generator.row([

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/views/auth/registration_screen.dart';
 import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/provider/auth_provider.dart';
+import 'package:zyvionix_pos/controllers/product_controller.dart';
+import 'package:zyvionix_pos/controllers/bill_controller.dart';
+import 'package:floating_snackbar/floating_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -88,7 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter username or email';
+                          return 'Please enter username, email or mobile';
+                        }
+                        if (value.contains('@')) {
+                          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                          if (!emailRegex.hasMatch(value)) {
+                            return 'Please enter a valid email address';
+                          }
+                        } else if (RegExp(r'^\d+$').hasMatch(value)) {
+                          if (value.length != 10) {
+                            return 'Mobile number must be exactly 10 digits';
+                          }
                         }
                         return null;
                       },
@@ -158,33 +173,69 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
 
                     // Login Button
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NavbarScreen(),
-                            ),
-                          );
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, _) {
+                        if (authProvider.isLoading) {
+                          return const Center(child: CircularProgressIndicator(color: Color(0xFF1EA1F2)));
                         }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  final success = await authProvider.login(
+                                    _emailController.text.trim(),
+                                    _passwordController.text,
+                                  );
+                                  if (success && mounted) {
+                                    context.read<ProductController>().init();
+                                    context.read<BillController>().init();
+                                    
+                                    floatingSnackBar(
+                                      message: 'LoggedIn successfull',
+                                      context: context,
+                                      textColor: Colors.white,
+                                      backgroundColor: Colors.green,
+                                      duration: const Duration(seconds: 2),
+                                    );
+
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const NavbarScreen(),
+                                      ),
+                                    );
+                                  } else if (mounted && authProvider.errorMessage.isNotEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(authProvider.errorMessage),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1EA1F2),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1EA1F2),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 16),
 

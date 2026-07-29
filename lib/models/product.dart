@@ -14,23 +14,19 @@ class Product extends HiveObject {
   double price;
 
   @HiveField(3)
-  String category;
+  String? category;
 
   @HiveField(4)
-  String? description;
-
-  @HiveField(5)
   DateTime createdAt;
 
-  @HiveField(6)
+  @HiveField(5)
   String? imagePath;
 
   Product({
     required this.id,
     required this.name,
     required this.price,
-    required this.category,
-    this.description,
+    this.category,
     this.imagePath,
     required this.createdAt,
   });
@@ -38,8 +34,7 @@ class Product extends HiveObject {
   factory Product.create({
     required String name,
     required double price,
-    required String category,
-    String? description,
+    String? category,
     String? imagePath,
   }) {
     return Product(
@@ -47,7 +42,6 @@ class Product extends HiveObject {
       name: name,
       price: price,
       category: category,
-      description: description,
       imagePath: imagePath,
       createdAt: DateTime.now(),
     );

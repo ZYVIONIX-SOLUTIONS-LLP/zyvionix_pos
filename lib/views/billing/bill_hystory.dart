@@ -81,9 +81,11 @@ class _BillHystoryState extends State<BillHystory> {
             
             // Bills List
             Expanded(
-              child: ValueListenableBuilder(
-                valueListenable: HiveBoxes.getBillsBox().listenable(),
-                builder: (context, Box<Bill> box, _) {
+              child: HiveBoxes.getBillsBox() == null
+                  ? const Center(child: Text('Cloud storage enabled. Offline history unavailable.'))
+                  : ValueListenableBuilder(
+                      valueListenable: HiveBoxes.getBillsBox()!.listenable(),
+                      builder: (context, Box<Bill> box, _) {
                   if (box.values.isEmpty) {
                     return Center(
                       child: Column(

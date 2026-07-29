@@ -2,28 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../database/hive_boxes.dart';
+import '../services/api_service.dart';
 
 class ProductController extends ChangeNotifier {
-  late Box<Product> _productsBox;
+  Box<Product>? _productsBox;
   List<Product> _products = [];
   String _searchQuery = '';
+
+  bool _isCloud = false;
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
   List<Product> get products {
     if (_searchQuery.isEmpty) return _products;
     return _products
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-                      p.category.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              p.category!.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
   ProductController() {
-    _productsBox = HiveBoxes.getProductsBox();
-    _loadProducts();
+    init();
   }
 
-  void _loadProducts() {
-    _products = _productsBox.values.toList();
+  Future<void> init() async {
+    final settingsBox = HiveBoxes.getSettingsBox();
+    final storageType = settingsBox.get(
+      'storageType',
+      defaultValue: 'Device Storage',
+    );
+    _isCloud = storageType == 'Cloud Storage' || storageType == 'cloud';
+
+    if (!_isCloud) {
+      _productsBox = HiveBoxes.getProductsBox();
+    }
+    await loadProducts();
+  }
+
+  Future<void> loadProducts() async {
+    _isLoading = true;
+    notifyListeners();
+
+    if (_isCloud) {
+      _products = await ApiService.getProducts();
+    } else {
+      if (_productsBox != null) {
+        _products = _productsBox!.values.toList();
+      }
+    }
+
     _products.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void clear() {
+    _productsBox = null;
+    _products = [];
+    _searchQuery = '';
+    _isCloud = false;
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -33,17 +74,34 @@ class ProductController extends ChangeNotifier {
   }
 
   Future<void> addProduct(Product product) async {
-    await _productsBox.put(product.id, product);
-    _loadProducts();
+    if (_isCloud) {
+      final success = await ApiService.addProduct(product);
+      if (success) await loadProducts();
+    } else {
+      if (_productsBox != null) {
+        await _productsBox!.put(product.id, product);
+        await loadProducts();
+      }
+    }
   }
 
   Future<void> updateProduct(Product product) async {
-    await product.save();
-    _loadProducts();
+    if (_isCloud) {
+      final success = await ApiService.updateProduct(product);
+      if (success) await loadProducts();
+    } else {
+      await product.save();
+      await loadProducts();
+    }
   }
 
   Future<void> deleteProduct(Product product) async {
-    await product.delete();
-    _loadProducts();
+    if (_isCloud) {
+      final success = await ApiService.deleteProduct(product.id);
+      if (success) await loadProducts();
+    } else {
+      await product.delete();
+      await loadProducts();
+    }
   }
 }

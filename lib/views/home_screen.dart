@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 import '../database/hive_boxes.dart';
-import '../models/bill.dart';
+import '../services/api_service.dart';
 import 'billing/bill_preview_screen.dart';
+import '../controllers/bill_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -213,80 +213,77 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final settingsBox = HiveBoxes.getSettingsBox();
-    final shopName = settingsBox.get('shop_name', defaultValue: 'Melvin');
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: ApiService.getProfile(),
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final shopName =
+            profile?['companyName'] ??
+            HiveBoxes.getSettingsBox().get(
+              'shop_name',
+              defaultValue: 'Zyvionix Solutions',
+            );
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              getGreeting(),
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              shopName,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        GestureDetector(
-          onTap: () {
-            context.read<BottomNavbarProvider>().setIndex(2);
-          },
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: const DecorationImage(
-                    image: AssetImage('assets/splashimage.png'),
-                    fit: BoxFit.cover,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  getGreeting(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
                   ),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ZYVIONIX',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E3A8A),
-                      letterSpacing: 0.5,
-                    ),
+                const SizedBox(height: 2),
+                Text(
+                  shopName,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  Text(
-                    'SOLUTIONS',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
-                      letterSpacing: 0.5,
-                    ),
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: () {
+                context.read<BottomNavbarProvider>().setIndex(2);
+              },
+              child: Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ZYVIONIX',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1E3A8A),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      Text(
+                        'SOLUTIONS',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -519,16 +516,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSummaryCards() {
-    return ValueListenableBuilder(
-      valueListenable: HiveBoxes.getBillsBox().listenable(),
-      builder: (context, Box<Bill> box, _) {
+    return Consumer<BillController>(
+      builder: (context, controller, _) {
+        if (controller.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         final now = DateTime.now();
         final startOfDay = DateTime(now.year, now.month, now.day);
 
         double todaysSale = 0.0;
         int billsToday = 0;
 
-        for (var bill in box.values) {
+        for (var bill in controller.bills) {
           if (bill.date.isAfter(startOfDay)) {
             todaysSale += bill.grandTotal;
             billsToday++;
@@ -642,10 +642,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentBills() {
-    return ValueListenableBuilder(
-      valueListenable: HiveBoxes.getBillsBox().listenable(),
-      builder: (context, Box<Bill> box, _) {
-        if (box.values.isEmpty) {
+    return Consumer<BillController>(
+      builder: (context, controller, _) {
+        if (controller.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.bills.isEmpty) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
@@ -657,7 +660,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        var bills = box.values.toList();
+        var bills = List.from(controller.bills);
         bills.sort((a, b) => b.date.compareTo(a.date));
 
         // Take top 10 recent bills

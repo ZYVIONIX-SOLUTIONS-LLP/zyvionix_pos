@@ -3,13 +3,35 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import '../models/bill.dart';
+import '../services/api_service.dart';
+import '../database/hive_boxes.dart';
 
 class PdfService {
   static Future<Uint8List> generateReceipt(Bill bill) async {
     final pdf = pw.Document();
 
-    // Thermal receipt width (approx 58mm -> 200 points, 80mm -> 300 points)
     final format = PdfPageFormat.roll80;
+
+    String companyName = 'ZYVIONIX POS';
+    String address = '';
+    String phone = '';
+
+    try {
+      final profile = await ApiService.getProfile();
+      if (profile != null) {
+        companyName = profile['companyName'] ?? companyName;
+        address = profile['companyAddress'] ?? '';
+        phone = profile['mobileNumber'] != null ? 'Ph: ${profile['mobileNumber']}' : '';
+      } else {
+        final box = HiveBoxes.getSettingsBox();
+        companyName = box.get('shop_name', defaultValue: companyName);
+        phone = box.get('user_phone') != null ? 'Ph: ${box.get('user_phone')}' : '';
+      }
+    } catch (e) {
+      final box = HiveBoxes.getSettingsBox();
+      companyName = box.get('shop_name', defaultValue: companyName);
+      phone = box.get('user_phone') != null ? 'Ph: ${box.get('user_phone')}' : '';
+    }
 
     pdf.addPage(
       pw.Page(
@@ -19,21 +41,28 @@ class PdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               pw.Text(
-                'ZYVIONIX POS',
+                companyName.toUpperCase(),
                 style: pw.TextStyle(
                   fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
                 ),
+                textAlign: pw.TextAlign.center,
               ),
               pw.SizedBox(height: 4),
-              pw.Text(
-                'Ernakulam,Kochi',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                'Ph: 6282714883',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
+              if (address.isNotEmpty) ...[
+                pw.Text(
+                  address,
+                  style: const pw.TextStyle(fontSize: 10),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ],
+              if (phone.isNotEmpty) ...[
+                pw.Text(
+                  phone,
+                  style: const pw.TextStyle(fontSize: 10),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ],
               pw.SizedBox(height: 12),
               pw.Divider(thickness: 1, borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 4),
@@ -52,12 +81,12 @@ class PdfService {
                 ],
               ),
 
-              if (bill.customerName != null) ...[
+              if (bill.companyName != null) ...[
                 pw.SizedBox(height: 4),
                 pw.Row(
                   children: [
                     pw.Text(
-                      'Customer: ${bill.customerName}',
+                      'Company: ${bill.companyName}',
                       style: const pw.TextStyle(fontSize: 10),
                     ),
                   ],
@@ -177,20 +206,7 @@ class PdfService {
                   ),
                 ],
               ),
-              if (bill.discount > 0)
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Discount',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      bill.discount.toStringAsFixed(2),
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
+
               if (bill.tax > 0)
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,

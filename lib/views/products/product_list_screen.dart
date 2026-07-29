@@ -1,9 +1,10 @@
 // ignore_for_file: unused_local_variable
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
-import 'package:zyvionix_pos/models/product.dart';
+import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/billing/cart_screen.dart';
 import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
 
@@ -19,49 +20,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final FocusNode searchFocusNode = FocusNode();
   String selectedCategory = "All";
 
-  final List<Map<String, dynamic>> products = [
-    {
-      "name": "Burger",
-      "price": 180,
-      "category": "Fast Food",
-      "rating": 4.5,
-      "image":
-          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300",
-    },
-    {
-      "name": "Pizza",
-      "price": 350,
-      "category": "Italian",
-      "rating": 4.8,
-      "image":
-          "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300",
-    },
-    {
-      "name": "Chicken Biryani",
-      "price": 220,
-      "category": "Meals",
-      "rating": 4.7,
-      "image":
-          "https://images.unsplash.com/photo-1701579231378-37291cfd5d9b?w=300",
-    },
-    {
-      "name": "Porotta",
-      "price": 20,
-      "category": "Kerala",
-      "rating": 4.9,
-      "image":
-          "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300",
-    },
-    {
-      "name": "Tea",
-      "price": 15,
-      "category": "Drinks",
-      "rating": 4.3,
-      "image":
-          "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300",
-    },
-  ];
-
   @override
   void dispose() {
     searchController.dispose();
@@ -72,20 +30,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<BillController>();
+    final productList = context.watch<ProductController>().products;
+
+    const String baseUrl = 'http://10.145.4.185:3000';
 
     final filteredProducts = searchController.text.isEmpty
-        ? products.where((product) {
-            return controller.cart.any(
-              (item) => item.product.name == product["name"],
-            );
+        ? productList.where((product) {
+            return controller.cart.any((item) => item.product.id == product.id);
           }).toList()
-        : products.where((product) {
-            final matchesQuery = product["name"].toLowerCase().contains(
+        : productList.where((product) {
+            final matchesQuery = product.name.toLowerCase().contains(
               searchController.text.toLowerCase(),
             );
+            final cat = (product.category?.isNotEmpty == true)
+                ? product.category!
+                : 'Uncategorized';
             final matchesCategory =
-                selectedCategory == "All" ||
-                product["category"] == selectedCategory;
+                selectedCategory == "All" || cat == selectedCategory;
             return matchesQuery && matchesCategory;
           }).toList();
 
@@ -191,22 +152,33 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            searchController.text.isEmpty
-                                ? Icons.search_rounded
-                                : Icons.search_off_rounded,
-                            size: 64,
+                            Icons.search_off_rounded,
+                            size: 80,
                             color: Colors.grey.shade400,
                           ),
-                          const SizedBox(height: 12),
+
+                          // Lottie.asset(
+                          //   'assets/empty_search.json',
+                          //   width: 250,
+                          //   height: 250,
+                          //   fit: BoxFit.contain,
+                          //   errorBuilder: (context, error, stackTrace) {
+                          //     return Icon(
+                          //       Icons.search_off_rounded,
+                          //       size: 80,
+                          //       color: Colors.grey.shade400,
+                          //     );
+                          //   },
+                          // ),
+                          const SizedBox(height: 16),
                           Text(
-                            searchController.text.isEmpty
-                                ? "Search for a product"
-                                : "No items found",
+                            'No products found matching your search',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w600,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
@@ -215,9 +187,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                       itemCount: filteredProducts.length,
                       itemBuilder: (context, index) {
-                        final productMap = filteredProducts[index];
+                        final productObj = filteredProducts[index];
                         final isInCart = controller.cart.any(
-                          (item) => item.product.name == productMap["name"],
+                          (item) => item.product.id == productObj.id,
                         );
 
                         return Container(
@@ -245,17 +217,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             borderRadius: BorderRadius.circular(16),
                             onTap: () {
                               if (!isInCart) {
-                                final product = Product.create(
-                                  name: productMap["name"],
-                                  price: (productMap["price"] as num)
-                                      .toDouble(),
-                                  category: productMap["category"],
-                                );
-                                controller.addToCart(product);
+                                controller.addToCart(productObj);
                               } else {
                                 final itemToRemove = controller.cart.firstWhere(
-                                  (item) =>
-                                      item.product.name == productMap["name"],
+                                  (item) => item.product.id == productObj.id,
                                 );
                                 controller.removeFromCart(itemToRemove);
                               }
@@ -272,24 +237,71 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      productMap["image"],
-                                      width: 65,
-                                      height: 65,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              width: 65,
-                                              height: 65,
-                                              color: Colors.orange.shade50,
-                                              child: const Icon(
-                                                Icons.fastfood_rounded,
-                                                color: Colors.orange,
-                                              ),
-                                            );
-                                          },
-                                    ),
+                                    child: productObj.imagePath != null
+                                        ? (productObj.imagePath!.startsWith(
+                                                'http',
+                                              )
+                                              ? Image.network(
+                                                  productObj.imagePath!,
+                                                  width: 65,
+                                                  height: 65,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) {
+                                                        return Container(
+                                                          width: 65,
+                                                          height: 65,
+                                                          color: Colors
+                                                              .orange
+                                                              .shade50,
+                                                          child: const Icon(
+                                                            Icons
+                                                                .fastfood_rounded,
+                                                            color:
+                                                                Colors.orange,
+                                                          ),
+                                                        );
+                                                      },
+                                                )
+                                              : Image.file(
+                                                  File(productObj.imagePath!),
+                                                  width: 65,
+                                                  height: 65,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) {
+                                                        return Container(
+                                                          width: 65,
+                                                          height: 65,
+                                                          color: Colors
+                                                              .orange
+                                                              .shade50,
+                                                          child: const Icon(
+                                                            Icons
+                                                                .fastfood_rounded,
+                                                            color:
+                                                                Colors.orange,
+                                                          ),
+                                                        );
+                                                      },
+                                                ))
+                                        : Container(
+                                            width: 65,
+                                            height: 65,
+                                            color: Colors.orange.shade50,
+                                            child: const Icon(
+                                              Icons.fastfood_rounded,
+                                              color: Colors.orange,
+                                            ),
+                                          ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -298,36 +310,37 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          productMap["name"],
+                                          productObj.name,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
+                                        if (productObj.category != null &&
+                                            productObj.category!.isNotEmpty)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              productObj.category!,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.blue.shade700,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ),
-                                          child: Text(
-                                            productMap["category"],
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.blue.shade700,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
                                         const SizedBox(height: 6),
                                         Text(
-                                          "₹${productMap["price"]}",
+                                          "₹${productObj.price.toStringAsFixed(0)}",
                                           style: const TextStyle(
                                             color: Colors.black87,
                                             fontWeight: FontWeight.w800,

@@ -90,8 +90,8 @@ class ProductsScreen extends StatelessWidget {
                           product.name,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        subtitle: product.description != null && product.description!.isNotEmpty
-                            ? Text(product.description!)
+                        subtitle: product.category != null && product.category!.isNotEmpty
+                            ? Text(product.category!)
                             : null,
                         trailing: Text(
                           '₹${product.price.toStringAsFixed(2)}',

@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
+import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/widgets/custom_text_field.dart';
 import 'package:zyvionix_pos/widgets/primary_button.dart';
 
@@ -16,69 +14,100 @@ class EditProfile extends StatefulWidget {
 class _EditProfileState extends State<EditProfile> {
   final _box = HiveBoxes.getSettingsBox();
   late TextEditingController _nameController;
+  late TextEditingController _addressController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-
-  final ImagePicker _picker = ImagePicker();
-  File? _profileImage;
+  bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: _box.get('user_name', defaultValue: 'Melvin Cherian'),
-    );
-    _emailController = TextEditingController(
-      text: _box.get('user_email', defaultValue: 'melvincherian@gmail.com'),
-    );
-    _phoneController = TextEditingController(
-      text: _box.get('user_phone', defaultValue: '9961593179'),
-    );
+    _nameController = TextEditingController();
+    _addressController = TextEditingController();
+    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
 
-    final imagePath = _box.get('profile_image');
-    if (imagePath != null && File(imagePath).existsSync()) {
-      _profileImage = File(imagePath);
-    }
+    _fetchProfile();
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
-    if (image != null) {
+  Future<void> _fetchProfile() async {
+    final profile = await ApiService.getProfile();
+    if (profile != null) {
       setState(() {
-        _profileImage = File(image.path);
+        _nameController.text = profile['companyName'] ?? '';
+        _addressController.text = profile['companyAddress'] ?? '';
+        _emailController.text = profile['email'] ?? '';
+        _phoneController.text = profile['mobileNumber'] ?? '';
+        _isLoading = false;
       });
-
-      _box.put('profile_image', image.path);
+    } else {
+      // Fallback to hive
+      setState(() {
+        _nameController.text = _box.get(
+          'shop_name',
+          defaultValue: 'Zyvionix Solutions',
+        );
+        _emailController.text = _box.get('user_email', defaultValue: '');
+        _phoneController.text = _box.get('user_phone', defaultValue: '');
+        _isLoading = false;
+      });
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _addressController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
-  void _saveProfile() {
-    _box.put('user_name', _nameController.text.trim());
-    _box.put('user_email', _emailController.text.trim());
-    _box.put('user_phone', _phoneController.text.trim());
+  Future<void> _saveProfile() async {
+    setState(() {
+      _isSaving = true;
+    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.green,
-        content: Text(
-          'Profile updated successfully!',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-    Navigator.pop(context);
+    final data = {
+      'companyName': _nameController.text.trim(),
+      'companyAddress': _addressController.text.trim(),
+      'email': _emailController.text.trim(),
+      'mobileNumber': _phoneController.text.trim(),
+    };
+
+    final success = await ApiService.updateProfile(data);
+
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(
+              'Profile updated successfully!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+        // Navigator.pop(context);
+
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to update profile.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -106,53 +135,6 @@ class _EditProfileState extends State<EditProfile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.deepPurple.shade100,
-                          width: 3,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color(0xFFEDEBFF),
-                        backgroundImage: _profileImage != null
-                            ? FileImage(_profileImage!)
-                            : const AssetImage('assets/splashimage.png')
-                                  as ImageProvider,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          _pickImage();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurple,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -166,30 +148,50 @@ class _EditProfileState extends State<EditProfile> {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    CustomTextField(
-                      label: 'Full Name',
-                      controller: _nameController,
-                      prefixIcon: Icons.person_outline_rounded,
-                    ),
-                    CustomTextField(
-                      label: 'Email Address',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
-                    ),
-                    CustomTextField(
-                      label: 'Phone Number',
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      prefixIcon: Icons.phone_outlined,
-                    ),
-                  ],
-                ),
+                child: _isLoading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          CustomTextField(
+                            label: 'Company Name',
+                            controller: _nameController,
+                            prefixIcon: Icons.business_rounded,
+                          ),
+                          CustomTextField(
+                            label: 'Company Address',
+                            controller: _addressController,
+                            prefixIcon: Icons.location_on_outlined,
+                          ),
+                          CustomTextField(
+                            label: 'Email Address',
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: Icons.email_outlined,
+                            readOnly: true,
+                            suffixIcon: Icon(Icons.lock),
+                          ),
+                          CustomTextField(
+                            label: 'Phone Number',
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            prefixIcon: Icons.phone_outlined,
+                            readOnly: true,
+                            suffixIcon: Icon(Icons.lock),
+                          ),
+                        ],
+                      ),
               ),
               const SizedBox(height: 32),
-              PrimaryButton(text: 'Save Changes', onPressed: _saveProfile),
+              PrimaryButton(
+                text: 'Save Changes',
+                onPressed: _saveProfile,
+                isLoading: _isSaving,
+              ),
             ],
           ),
         ),

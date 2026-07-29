@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
-import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
+// import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
 import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'package:zyvionix_pos/widgets/subscription_modal.dart';
+import 'package:zyvionix_pos/services/api_service.dart';
+import 'package:zyvionix_pos/provider/auth_provider.dart';
+import 'package:zyvionix_pos/controllers/product_controller.dart';
+import 'package:zyvionix_pos/controllers/bill_controller.dart';
+import 'package:floating_snackbar/floating_snackbar.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late Future<Map<String, dynamic>?> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = ApiService.getProfile();
+  }
+
+  void _refreshProfile() {
+    setState(() {
+      _profileFuture = ApiService.getProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,30 +79,41 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: Colors.blue,
                       title: 'Edit Profile',
                       subtitle: 'Update your personal information',
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditProfile(),
                           ),
                         );
+
+                        if (result == true) {
+                          _refreshProfile();
+                        }
+
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => EditProfile(),
+                        //   ),
+                        // );
                       },
                     ),
-                    _divider(),
-                    _buildMenuItem(
-                      icon: Icons.notifications_none_rounded,
-                      iconColor: Colors.orange,
-                      title: 'Notifications',
-                      subtitle: 'Manage notification preferences',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NotificationScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    // _divider(),
+                    // _buildMenuItem(
+                    //   icon: Icons.notifications_none_rounded,
+                    //   iconColor: Colors.orange,
+                    //   title: 'Notifications',
+                    //   subtitle: 'Manage notification preferences',
+                    //   onTap: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) => NotificationScreen(),
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
                     _divider(),
                     _buildMenuItem(
                       icon: Icons.cloud_circle_rounded,
@@ -160,110 +194,109 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 30, left: 20, right: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x11000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          Align(
-            alignment: Alignment.topLeft,
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-              onPressed: () {
-                context.read<BottomNavbarProvider>().setIndex(0);
-              },
-            ),
-          ),
-          ValueListenableBuilder(
-            valueListenable: HiveBoxes.getSettingsBox().listenable(),
-            builder: (context, box, child) {
-              final userName = box.get(
-                'user_name',
-                defaultValue: 'Melvin Cherian',
-              );
-              final userEmail = box.get(
-                'user_email',
-                defaultValue: 'melvincherian@gmail.com',
-              );
+    return FutureBuilder<Map<String, dynamic>?>(
+      // future: ApiService.getProfile(),
+      future: _profileFuture,
 
-              return Column(
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final companyName =
+            profile?['companyName'] ??
+            HiveBoxes.getSettingsBox().get(
+              'shop_name',
+              defaultValue: 'Zyvionix Solutions',
+            );
+        final email =
+            profile?['email'] ??
+            HiveBoxes.getSettingsBox().get('user_email', defaultValue: '');
+        final mobile = profile?['mobileNumber'] ?? '';
+        final address = profile?['companyAddress'] ?? '';
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(
+            top: 16,
+            bottom: 30,
+            left: 20,
+            right: 20,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28),
+              bottomRight: Radius.circular(28),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x11000000),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+                  onPressed: () {
+                    context.read<BottomNavbarProvider>().setIndex(0);
+                  },
+                ),
+              ),
+              Column(
                 children: [
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.deepPurple.shade100,
-                            width: 3,
-                          ),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 48,
-                          backgroundColor: Color(0xFFEDEBFF),
-                          backgroundImage: AssetImage('assets/splashimage.png'),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurple,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 14),
                   Text(
-                    userName,
+                    companyName,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E1E1E),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    userEmail,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
+                  if (email.isNotEmpty)
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  if (mobile.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Phone: $mobile',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  if (address.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        address,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
                 ],
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -396,12 +429,25 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
+            onPressed: () async {
+              context.read<ProductController>().clear();
+              context.read<BillController>().clear();
+              await context.read<AuthProvider>().logout();
+              if (context.mounted) {
+                floatingSnackBar(
+                  message: 'Loggedout successfully',
+                  context: context,
+                  textColor: Colors.white,
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 2),
+                );
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),

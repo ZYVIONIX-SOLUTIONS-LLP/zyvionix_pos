@@ -156,6 +156,8 @@ import '../../models/bill.dart';
 import '../../services/pdf_service.dart';
 import '../../services/printer_service.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import '../../services/api_service.dart';
+import '../../database/hive_boxes.dart';
 
 class BillPreviewScreen extends StatefulWidget {
   final Bill bill;
@@ -381,21 +383,60 @@ class ThermalReceiptCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(
-                  child: Text(
-                    'ZYVIONIX POS',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      letterSpacing: 1.2,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: ApiService.getProfile(),
+                  builder: (context, snapshot) {
+                    String companyName = 'ZYVIONIX POS';
+                    String address = 'Ernakulam, Kochi';
+                    String phone = 'Ph: 6282714883';
+                    
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: SizedBox(
+                            width: 20, height: 20, 
+                            child: CircularProgressIndicator(strokeWidth: 2)
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasData && snapshot.data != null) {
+                      companyName = snapshot.data!['companyName'] ?? companyName;
+                      address = snapshot.data!['companyAddress'] ?? address;
+                      phone = 'Ph: ${snapshot.data!['mobileNumber'] ?? 'N/A'}';
+                    } else {
+                      final box = HiveBoxes.getSettingsBox();
+                      companyName = box.get('shop_name', defaultValue: companyName);
+                      // Hive doesn't explicitly store company address right now, so fallback to email/phone
+                      phone = 'Ph: ${box.get('user_phone', defaultValue: 'N/A')}';
+                      address = ''; // Clear hardcoded address if using offline fallback
+                    }
+
+                    return Column(
+                      children: [
+                        Center(
+                          child: Text(
+                            companyName.toUpperCase(),
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              letterSpacing: 1.2,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        if (address.isNotEmpty)
+                          Center(child: Text(address, style: _mono, textAlign: TextAlign.center)),
+                        Center(child: Text(phone, style: _mono, textAlign: TextAlign.center)),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 2),
-                const Center(child: Text('Ernakulam, Kochi', style: _mono)),
-                const Center(child: Text('Ph: 6282714883', style: _mono)),
                 const SizedBox(height: 10),
                 _DashedDivider(),
                 const SizedBox(height: 6),
@@ -409,9 +450,9 @@ class ThermalReceiptCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (bill.customerName != null) ...[
-                  const SizedBox(height: 2),
-                  Text('Customer: ${bill.customerName}', style: _mono),
+                if (bill.companyName != null) ...[
+                  const SizedBox(height: 4),
+                  Text('Company: ${bill.companyName}', style: _mono),
                 ],
                 const SizedBox(height: 8),
                 _DashedDivider(),
@@ -527,8 +568,7 @@ class ThermalReceiptCard extends StatelessWidget {
                 _DashedDivider(),
                 const SizedBox(height: 6),
                 _totalRow('Subtotal', bill.subTotal, currency),
-                if (bill.discount > 0)
-                  _totalRow('Discount', -bill.discount, currency),
+
                 if (bill.tax > 0) _totalRow('Tax', bill.tax, currency),
                 const SizedBox(height: 6),
                 _DashedDivider(),

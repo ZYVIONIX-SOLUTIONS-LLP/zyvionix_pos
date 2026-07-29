@@ -399,17 +399,34 @@ class CartScreen extends StatelessWidget {
     );
   }
 
+  // Widget _buildQtyButton(IconData icon, VoidCallback onTap) {
+  //   return InkWell(
+  //     onTap: onTap,
+  //     borderRadius: BorderRadius.circular(8),
+  //     child: Container(
+  //       padding: const EdgeInsets.all(4),
+  //       decoration: BoxDecoration(
+  //         border: Border.all(color: Colors.grey.shade300),
+  //         borderRadius: BorderRadius.circular(8),
+  //       ),
+  //       child: Icon(icon, size: 14, color: Colors.black87),
+  //     ),
+  //   );
+  // }
+
   Widget _buildQtyButton(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.all(4),
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
+          color: Colors.grey.shade100,
           border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 14, color: Colors.black87),
+        child: Icon(icon, size: 20, color: Colors.black87),
       ),
     );
   }

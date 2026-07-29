@@ -4,30 +4,71 @@ import '../models/product.dart';
 import '../models/bill.dart';
 import '../models/bill_item.dart';
 import '../database/hive_boxes.dart';
+import '../services/api_service.dart';
 
 class BillController extends ChangeNotifier {
-  late Box<Bill> _billsBox;
+  Box<Bill>? _billsBox;
+  bool _isCloud = false;
+
+  List<Bill> _bills = [];
+  bool _isLoading = false;
+
+  List<Bill> get bills => _bills;
+  bool get isLoading => _isLoading;
 
   // Cart state
   List<BillItem> _cart = [];
-  double _discount = 0.0;
   double _tax = 0.0;
   String _paymentMethod = 'Cash';
-  String? _customerName;
+  String? _companyName;
   String? _customerPhone;
 
   List<BillItem> get cart => _cart;
-  double get discount => _discount;
   double get tax => _tax;
   String get paymentMethod => _paymentMethod;
-  String? get customerName => _customerName;
+  String? get companyName => _companyName;
   String? get customerPhone => _customerPhone;
 
   double get subTotal => _cart.fold(0, (sum, item) => sum + item.total);
-  double get grandTotal => subTotal - _discount + _tax;
+  double get grandTotal => subTotal + _tax;
 
   BillController() {
-    _billsBox = HiveBoxes.getBillsBox();
+    init();
+  }
+
+  Future<void> init() async {
+    _isLoading = true;
+    notifyListeners();
+
+    final settingsBox = HiveBoxes.getSettingsBox();
+    final storageType = settingsBox.get('storageType', defaultValue: 'Device Storage');
+    _isCloud = storageType == 'Cloud Storage' || storageType == 'cloud';
+    
+    if (!_isCloud) {
+      _billsBox = HiveBoxes.getBillsBox();
+      if (_billsBox != null) {
+        _bills = _billsBox!.values.toList();
+      }
+    } else {
+      try {
+        _bills = await ApiService.getBills();
+      } catch (e) {
+        _bills = [];
+      }
+    }
+
+    _bills.sort((a, b) => b.date.compareTo(a.date));
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void clear() {
+    _billsBox = null;
+    _isCloud = false;
+    _bills = [];
+    _isLoading = false;
+    clearCart();
+    notifyListeners();
   }
 
   void addToCart(Product product) {
@@ -63,11 +104,6 @@ class BillController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setDiscount(double amount) {
-    _discount = amount;
-    notifyListeners();
-  }
-
   void setTax(double amount) {
     _tax = amount;
     notifyListeners();
@@ -78,24 +114,29 @@ class BillController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCustomerDetails(String name, String phone) {
-    _customerName = name.isEmpty ? null : name;
-    _customerPhone = phone.isEmpty ? null : phone;
+  void setCustomerDetails(String? company, String? phone) {
+    _companyName = company?.isEmpty ?? true ? null : company;
+    _customerPhone = phone?.isEmpty ?? true ? null : phone;
     notifyListeners();
   }
 
   void clearCart() {
     _cart.clear();
-    _discount = 0.0;
     _tax = 0.0;
     _paymentMethod = 'Cash';
-    _customerName = null;
+    _companyName = null;
     _customerPhone = null;
     notifyListeners();
   }
 
   Future<Bill> saveBill() async {
-    final billNumber = _billsBox.length + 1;
+    int billNumber = 1;
+    if (!_isCloud && _billsBox != null) {
+      billNumber = _billsBox!.length + 1;
+    } else {
+      billNumber = DateTime.now().millisecondsSinceEpoch % 100000;
+    }
+
     final now = DateTime.now();
 
     final newBill = Bill(
@@ -104,15 +145,24 @@ class BillController extends ChangeNotifier {
       date: now,
       items: List.from(_cart),
       subTotal: subTotal,
-      discount: _discount,
       tax: _tax,
       grandTotal: grandTotal,
       paymentMethod: _paymentMethod,
-      customerName: _customerName,
+      companyName: _companyName,
       customerPhone: _customerPhone,
+      timestamp: now,
     );
 
-    await _billsBox.put(newBill.id, newBill);
+    if (_isCloud) {
+      await ApiService.addBill(newBill);
+    } else {
+      if (_billsBox != null) {
+        await _billsBox!.put(newBill.id, newBill);
+      }
+    }
+
+    _bills.insert(0, newBill);
+
     clearCart();
     return newBill;
   }

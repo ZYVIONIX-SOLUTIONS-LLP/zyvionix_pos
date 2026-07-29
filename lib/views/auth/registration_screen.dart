@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:zyvionix_pos/database/hive_boxes.dart';
+import 'package:flutter/services.dart';
+// import 'package:zyvionix_pos/database/hive_boxes.dart';
+import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/provider/auth_provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -34,6 +37,69 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     super.dispose();
   }
 
+  // Widget _buildTextField({
+  //   required TextEditingController controller,
+  //   required String label,
+  //   required IconData icon,
+  //   bool isOptional = false,
+  //   bool isPassword = false,
+  //   TextInputType keyboardType = TextInputType.text,
+  // }) {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 16.0),
+  //     child: TextFormField(
+  //       controller: controller,
+  //       obscureText: isPassword && !_isPasswordVisible,
+  //       keyboardType: keyboardType,
+  //       validator: (value) {
+  //         if (!isOptional && (value == null || value.trim().isEmpty)) {
+  //           return 'Please enter $label';
+  //         }
+  //         if (value != null && value.isNotEmpty) {
+  //           if (keyboardType == TextInputType.phone) {
+  //             if (value.length != 10 || !RegExp(r'^\d+$').hasMatch(value)) {
+  //               return 'Please enter a valid 10-digit number';
+  //             }
+  //           } else if (keyboardType == TextInputType.emailAddress) {
+  //             final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+  //             if (!emailRegex.hasMatch(value)) {
+  //               return 'Please enter a valid email address';
+  //             }
+  //           }
+  //         }
+  //         if (isPassword &&
+  //             value != null &&
+  //             value.isNotEmpty &&
+  //             value.length < 6) {
+  //           return 'Password must be at least 6 characters';
+  //         }
+  //         return null;
+  //       },
+  //       decoration: InputDecoration(
+  //         labelText: label + (isOptional ? ' (Optional)' : ''),
+  //         prefixIcon: Icon(icon),
+  //         suffixIcon: isPassword
+  //             ? IconButton(
+  //                 icon: Icon(
+  //                   _isPasswordVisible
+  //                       ? Icons.visibility_off_outlined
+  //                       : Icons.visibility_outlined,
+  //                 ),
+  //                 onPressed: () {
+  //                   setState(() {
+  //                     _isPasswordVisible = !_isPasswordVisible;
+  //                   });
+  //                 },
+  //               )
+  //             : null,
+  //         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  //         filled: true,
+  //         fillColor: Theme.of(context).colorScheme.surface,
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -48,18 +114,42 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         controller: controller,
         obscureText: isPassword && !_isPasswordVisible,
         keyboardType: keyboardType,
+
+        inputFormatters: keyboardType == TextInputType.phone
+            ? [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(10),
+              ]
+            : null,
+
         validator: (value) {
           if (!isOptional && (value == null || value.trim().isEmpty)) {
             return 'Please enter $label';
           }
+
+          if (value != null && value.isNotEmpty) {
+            if (keyboardType == TextInputType.phone) {
+              if (value.length != 10) {
+                return 'Please enter a valid 10-digit number';
+              }
+            } else if (keyboardType == TextInputType.emailAddress) {
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+              if (!emailRegex.hasMatch(value)) {
+                return 'Please enter a valid email address';
+              }
+            }
+          }
+
           if (isPassword &&
               value != null &&
               value.isNotEmpty &&
               value.length < 6) {
             return 'Password must be at least 6 characters';
           }
+
           return null;
         },
+
         decoration: InputDecoration(
           labelText: label + (isOptional ? ' (Optional)' : ''),
           prefixIcon: Icon(icon),
@@ -237,43 +327,82 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
                     const SizedBox(height: 32),
 
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          // Save the storage preference for the login/home flow
-                          final box = HiveBoxes.getSettingsBox();
-                          await box.put('storageType', _storageType);
-                          await box.put('subscriptionModalShown', false);
-
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Registration successful! Please login.',
-                                ),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, _) {
+                        if (authProvider.isLoading) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF1EA1F2),
+                            ),
+                          );
                         }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  final success = await authProvider.register(
+                                    companyName: _companyNameController.text
+                                        .trim(),
+                                    companyAddress: _companyAddressController
+                                        .text
+                                        .trim(),
+                                    businessType: _businessTypeController.text
+                                        .trim(),
+                                    mobileNumber: _mobileNumberController.text
+                                        .trim(),
+                                    gstNumber: _gstController.text.trim(),
+                                    email: _emailController.text.trim(),
+                                    password: _passwordController.text,
+                                    storagePreference: _storageType,
+                                  );
+
+                                  if (success && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Registration successful! Please login.',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                  } else if (mounted &&
+                                      authProvider.errorMessage.isNotEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          authProvider.errorMessage,
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1EA1F2),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Register',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1EA1F2),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Register',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ],
                 ),

@@ -21,22 +21,22 @@ class Bill extends HiveObject {
   double subTotal;
 
   @HiveField(5)
-  double discount;
-
-  @HiveField(6)
   double tax;
 
-  @HiveField(7)
+  @HiveField(6)
   double grandTotal;
 
-  @HiveField(8)
+  @HiveField(7)
   String paymentMethod;
 
+  @HiveField(8)
+  String? companyName;
+
   @HiveField(9)
-  String? customerName;
+  String? customerPhone;
 
   @HiveField(10)
-  String? customerPhone;
+  DateTime timestamp;
 
   Bill({
     required this.id,
@@ -44,11 +44,11 @@ class Bill extends HiveObject {
     required this.date,
     required this.items,
     required this.subTotal,
-    required this.discount,
     required this.tax,
     required this.grandTotal,
     required this.paymentMethod,
-    this.customerName,
+    this.companyName,
     this.customerPhone,
+    required this.timestamp,
   });
 }

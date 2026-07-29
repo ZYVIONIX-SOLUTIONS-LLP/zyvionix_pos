@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:zyvionix_pos/views/billing/bill_preview_screen.dart';
-import '../../models/bill.dart';
-import '../../database/hive_boxes.dart';
+import '../../controllers/bill_controller.dart';
 import '../../constants/app_theme.dart';
 
 class BillHistoryScreen extends StatefulWidget {
@@ -37,15 +36,17 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: HiveBoxes.getBillsBox().listenable(),
-              builder: (context, Box<Bill> box, _) {
-                if (box.values.isEmpty) {
+            child: Consumer<BillController>(
+              builder: (context, controller, child) {
+                if (controller.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (controller.bills.isEmpty) {
                   return const Center(child: Text('No bills found.'));
                 }
 
-                var bills = box.values.toList();
-                bills.sort((a, b) => b.date.compareTo(a.date));
+                var bills = List.from(controller.bills);
 
                 if (_searchQuery.isNotEmpty) {
                   bills = bills.where((b) {
@@ -53,7 +54,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                       _searchQuery,
                     );
                     final matchName =
-                        b.customerName?.toLowerCase().contains(_searchQuery) ??
+                        b.companyName?.toLowerCase().contains(_searchQuery) ??
                         false;
                     return matchNo || matchName;
                   }).toList();
@@ -81,8 +82,8 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                               'dd MMM yyyy, hh:mm a',
                             ).format(bill.date),
                           ),
-                          if (bill.customerName != null)
-                            Text('Customer: ${bill.customerName}'),
+                          if (bill.companyName != null)
+                            Text('Company: ${bill.companyName}'),
                         ],
                       ),
                       trailing: Text(

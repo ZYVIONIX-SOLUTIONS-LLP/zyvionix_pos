@@ -59,9 +59,9 @@ class HelpScreen extends StatelessWidget {
               _buildContactCard(
                 icon: Icons.phone_rounded,
                 title: 'Call Us',
-                subtitle: '+91 9961593179',
+                subtitle: '+91 6238392582',
                 color: Colors.blue.shade600,
-                onTap: () => _launchUrl('tel:+919961593179'),
+                onTap: () => _launchUrl('tel:+916238392582'),
               ),
               const SizedBox(height: 16),
               _buildContactCard(
