@@ -5,9 +5,7 @@ import '../models/bill_item.dart';
 
 class HiveBoxes {
   static const String settingsBox = 'settings_box';
-
   static String? _currentUserId;
-
   static Future<void> initHiveAndOpenBoxes() async {
     Hive.registerAdapter(ProductAdapter());
     Hive.registerAdapter(BillAdapter());
@@ -35,12 +33,14 @@ class HiveBoxes {
   }
 
   static Box<Product>? getProductsBox() {
-    if (_currentUserId == null || !Hive.isBoxOpen('products_$_currentUserId')) return null;
+    if (_currentUserId == null || !Hive.isBoxOpen('products_$_currentUserId'))
+      return null;
     return Hive.box<Product>('products_$_currentUserId');
   }
 
   static Box<Bill>? getBillsBox() {
-    if (_currentUserId == null || !Hive.isBoxOpen('bills_$_currentUserId')) return null;
+    if (_currentUserId == null || !Hive.isBoxOpen('bills_$_currentUserId'))
+      return null;
     return Hive.box<Bill>('bills_$_currentUserId');
   }
 

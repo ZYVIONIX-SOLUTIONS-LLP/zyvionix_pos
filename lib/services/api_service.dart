@@ -16,7 +16,6 @@ class ApiService {
     };
   }
 
-  // --- Products ---
   static Future<List<Product>> getProducts() async {
     try {
       final headers = await _getHeaders();
@@ -41,8 +40,6 @@ class ApiService {
                 ? DateTime.parse(json['createdAt'])
                 : DateTime.now(),
           );
-          // If product has createdAt property on the frontend model, we could set it.
-          // Since we don't know the exact constructor, we assume this works based on typical Hive models.
           return p;
         }).toList();
       }
@@ -195,14 +192,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> getProfile() async {
     try {
       final headers = await _getHeaders();
-      // Since ApiConstants.baseUrl might not have /auth, let's check ApiConstants.
-      // We will assume the endpoint is '${ApiConstants.baseUrl}/auth/profile' 
-      // based on typical setups, or we can just replace the path of productsUrl.
-      final uri = Uri.parse(ApiConstants.productsUrl).replace(path: '/api/auth/profile');
-      final response = await http.get(
-        uri,
-        headers: headers,
-      );
+      final uri = Uri.parse(
+        ApiConstants.productsUrl,
+      ).replace(path: '/api/auth/profile');
+      final response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -215,7 +208,9 @@ class ApiService {
   static Future<bool> updateProfile(Map<String, dynamic> data) async {
     try {
       final headers = await _getHeaders();
-      final uri = Uri.parse(ApiConstants.productsUrl).replace(path: '/api/auth/profile');
+      final uri = Uri.parse(
+        ApiConstants.productsUrl,
+      ).replace(path: '/api/auth/profile');
       final response = await http.put(
         uri,
         headers: headers,

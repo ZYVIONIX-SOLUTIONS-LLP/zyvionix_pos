@@ -146,8 +146,9 @@
 
 // ignore_for_file: unused_field
 
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
@@ -176,6 +177,7 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
   bool _isSharing = false;
   bool _isPrinting = false;
   bool _showFullPdf = false;
+  final GlobalKey _receiptKey = GlobalKey();
 
   @override
   void initState() {
@@ -194,15 +196,32 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
   Future<void> _shareReceipt() async {
     setState(() => _isSharing = true);
     try {
-      final pdfBytes = await PdfService.generateReceipt(widget.bill);
-      final xFile = XFile.fromData(
-        pdfBytes,
-        mimeType: 'application/pdf',
-        name: 'bill_${widget.bill.billNumber}.pdf',
-      );
-      await Share.shareXFiles([
-        xFile,
-      ], text: 'Receipt for Bill #${widget.bill.billNumber}');
+      if (_showFullPdf) {
+        final pdfBytes = await PdfService.generateReceipt(widget.bill);
+        final xFile = XFile.fromData(
+          pdfBytes,
+          mimeType: 'application/pdf',
+          name: 'bill_${widget.bill.billNumber}.pdf',
+        );
+        await Share.shareXFiles([
+          xFile,
+        ], text: 'Receipt for Bill #${widget.bill.billNumber}');
+      } else {
+        RenderRepaintBoundary boundary = _receiptKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+        var byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData != null) {
+          final pngBytes = byteData.buffer.asUint8List();
+          final xFile = XFile.fromData(
+            pngBytes,
+            mimeType: 'image/png',
+            name: 'receipt_${widget.bill.billNumber}.png',
+          );
+          await Share.shareXFiles([
+            xFile,
+          ], text: 'Receipt for Bill #${widget.bill.billNumber}');
+        }
+      }
     } catch (e) {
       _showSnack('Could not share receipt: $e');
     } finally {
@@ -309,19 +328,27 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
             onPressed: _isSharing ? null : _shareReceipt,
           ),
           IconButton(
-            tooltip: 'Print',
+            tooltip: 'System Print',
+            icon: const Icon(Icons.print),
+            onPressed: () async {
+              await Printing.layoutPdf(
+                onLayout: (PdfPageFormat format) async => PdfService.generateReceipt(widget.bill),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Thermal Print',
             icon: _isPrinting
                 ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
                     ),
                   )
                 : Icon(
-                    Icons.print,
-                    color: _isConnected ? Colors.greenAccent : Colors.white,
+                    Icons.bluetooth_connected,
+                    color: _isConnected ? Colors.green : null,
                   ),
             onPressed: _isPrinting ? null : _printViaBluetooth,
           ),
@@ -337,7 +364,12 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: ThermalReceiptCard(bill: widget.bill)),
+              child: Center(
+                child: RepaintBoundary(
+                  key: _receiptKey,
+                  child: ThermalReceiptCard(bill: widget.bill),
+                ),
+              ),
             ),
     );
   }
