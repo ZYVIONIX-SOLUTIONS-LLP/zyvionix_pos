@@ -32,8 +32,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final controller = context.watch<BillController>();
     final productList = context.watch<ProductController>().products;
 
-    const String baseUrl = 'http://10.145.4.185:3000';
-
     final filteredProducts = searchController.text.isEmpty
         ? productList.where((product) {
             return controller.cart.any((item) => item.product.id == product.id);
@@ -350,9 +348,27 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       ],
                                     ),
                                   ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      color: Colors.grey,
+                                      size: 22,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AddEditProductScreen(
+                                                product: productObj,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                   if (isInCart)
                                     const Padding(
-                                      padding: EdgeInsets.only(right: 12),
+                                      padding: EdgeInsets.only(right: 4),
                                       child: Icon(
                                         Icons.check_circle_rounded,
                                         color: Colors.blue,

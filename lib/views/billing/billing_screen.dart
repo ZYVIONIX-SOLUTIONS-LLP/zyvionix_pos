@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/products/product_list_screen.dart';
+import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
 import '../../controllers/bill_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
@@ -77,6 +78,21 @@ class _BillingScreenState extends State<BillingScreen> {
         centerTitle: !_isSearching,
         automaticallyImplyLeading: false,
         actions: [
+          if (_selectedProductIds.length == 1)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+              tooltip: 'Edit Product',
+              onPressed: () {
+                final selectedId = _selectedProductIds.first;
+                final selectedProduct = products.firstWhere((p) => p.id == selectedId);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddEditProductScreen(product: selectedProduct),
+                  ),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.list_alt),
             onPressed: () {

@@ -21,16 +21,22 @@ class PdfService {
       if (profile != null) {
         companyName = profile['companyName'] ?? companyName;
         address = profile['companyAddress'] ?? '';
-        phone = profile['mobileNumber'] != null ? 'Ph: ${profile['mobileNumber']}' : '';
+        phone = profile['mobileNumber'] != null
+            ? 'Ph: ${profile['mobileNumber']}'
+            : '';
       } else {
         final box = HiveBoxes.getSettingsBox();
         companyName = box.get('shop_name', defaultValue: companyName);
-        phone = box.get('user_phone') != null ? 'Ph: ${box.get('user_phone')}' : '';
+        phone = box.get('user_phone') != null
+            ? 'Ph: ${box.get('user_phone')}'
+            : '';
       }
     } catch (e) {
       final box = HiveBoxes.getSettingsBox();
       companyName = box.get('shop_name', defaultValue: companyName);
-      phone = box.get('user_phone') != null ? 'Ph: ${box.get('user_phone')}' : '';
+      phone = box.get('user_phone') != null
+          ? 'Ph: ${box.get('user_phone')}'
+          : '';
     }
 
     pdf.addPage(
@@ -154,6 +160,7 @@ class PdfService {
                 (item) => pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(vertical: 2),
                   child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Expanded(
                         flex: 3,

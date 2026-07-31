@@ -559,16 +559,13 @@ class ThermalReceiptCard extends StatelessWidget {
                   (item) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           flex: 3,
                           child: Text(
                             item.product.name,
                             style: _mono,
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Expanded(

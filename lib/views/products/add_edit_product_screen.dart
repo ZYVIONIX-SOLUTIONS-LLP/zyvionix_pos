@@ -195,7 +195,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 controller: _categoryController,
               ),
               const SizedBox(height: 24),
-              PrimaryButton(text: 'Save', onPressed: _saveProduct),
+
+              PrimaryButton(
+                text: isEditing ? 'Update Product' : 'Save Product',
+                onPressed: _saveProduct,
+              ),
             ],
           ),
         ),
