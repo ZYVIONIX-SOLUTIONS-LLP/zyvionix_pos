@@ -8,7 +8,7 @@ part of 'shop.dart';
 
 class ShopAdapter extends TypeAdapter<Shop> {
   @override
-  final int typeId = 3;
+  final int typeId = 4;
 
   @override
   Shop read(BinaryReader reader) {
@@ -18,36 +18,33 @@ class ShopAdapter extends TypeAdapter<Shop> {
     };
     return Shop(
       id: fields[0] as String,
-      name: fields[1] as String,
-      address: fields[2] as String,
-      email: fields[3] as String?,
-      phone: fields[4] as String?,
-      businessType: fields[5] as String?,
-      gstNumber: fields[6] as String?,
-      isDefault: fields[7] as bool,
+      ownerId: fields[1] as String,
+      name: fields[2] as String,
+      address: fields[3] as String,
+      mobile: fields[4] as String,
+      gst: fields[5] as String?,
+      email: fields[6] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Shop obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.name)
+      ..write(obj.ownerId)
       ..writeByte(2)
-      ..write(obj.address)
+      ..write(obj.name)
       ..writeByte(3)
-      ..write(obj.email)
+      ..write(obj.address)
       ..writeByte(4)
-      ..write(obj.phone)
+      ..write(obj.mobile)
       ..writeByte(5)
-      ..write(obj.businessType)
+      ..write(obj.gst)
       ..writeByte(6)
-      ..write(obj.gstNumber)
-      ..writeByte(7)
-      ..write(obj.isDefault);
+      ..write(obj.email);
   }
 
   @override

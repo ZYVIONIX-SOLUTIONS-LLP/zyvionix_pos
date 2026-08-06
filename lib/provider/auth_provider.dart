@@ -59,6 +59,12 @@ class AuthProvider extends ChangeNotifier {
           await box.put('shop_name', data['user']['companyName']);
         }
         await box.put('user_email', data['user']['email'] ?? '');
+        
+        await box.put('user_role', data['user']['role'] ?? 'Owner');
+        if (data['user']['role'] == 'Employee') {
+          await box.put('shop_id', data['user']['shopId']);
+          await box.put('employee_name', data['user']['name']);
+        }
 
         await HiveBoxes.openUserBoxes(userId);
 
@@ -139,6 +145,9 @@ class AuthProvider extends ChangeNotifier {
     await box.delete('user_email');
     await box.delete('user_phone');
     await box.delete('profile_image');
+    await box.delete('user_role');
+    await box.delete('shop_id');
+    await box.delete('employee_name');
     notifyListeners();
   }
 }

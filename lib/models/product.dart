@@ -22,12 +22,16 @@ class Product extends HiveObject {
   @HiveField(5)
   String? imagePath;
 
+  @HiveField(6)
+  String? shopId;
+
   Product({
     required this.id,
     required this.name,
     required this.price,
     this.category,
     this.imagePath,
+    this.shopId,
     required this.createdAt,
   });
 
@@ -36,6 +40,7 @@ class Product extends HiveObject {
     required double price,
     String? category,
     String? imagePath,
+    String? shopId,
   }) {
     return Product(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -43,6 +48,7 @@ class Product extends HiveObject {
       price: price,
       category: category,
       imagePath: imagePath,
+      shopId: shopId,
       createdAt: DateTime.now(),
     );
   }

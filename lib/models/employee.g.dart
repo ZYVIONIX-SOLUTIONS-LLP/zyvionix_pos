@@ -1,50 +1,44 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'product.dart';
+part of 'employee.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ProductAdapter extends TypeAdapter<Product> {
+class EmployeeAdapter extends TypeAdapter<Employee> {
   @override
-  final int typeId = 0;
+  final int typeId = 5;
 
   @override
-  Product read(BinaryReader reader) {
+  Employee read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Product(
+    return Employee(
       id: fields[0] as String,
-      name: fields[1] as String,
-      price: fields[2] as double,
-      category: fields[3] as String?,
-      imagePath: fields[5] as String?,
-      shopId: fields[6] as String?,
-      createdAt: fields[4] as DateTime,
+      shopId: fields[1] as String,
+      name: fields[2] as String,
+      role: fields[3] as String,
+      mobileNumber: fields[4] as String,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Product obj) {
+  void write(BinaryWriter writer, Employee obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.name)
+      ..write(obj.shopId)
       ..writeByte(2)
-      ..write(obj.price)
+      ..write(obj.name)
       ..writeByte(3)
-      ..write(obj.category)
+      ..write(obj.role)
       ..writeByte(4)
-      ..write(obj.createdAt)
-      ..writeByte(5)
-      ..write(obj.imagePath)
-      ..writeByte(6)
-      ..write(obj.shopId);
+      ..write(obj.mobileNumber);
   }
 
   @override
@@ -53,7 +47,7 @@ class ProductAdapter extends TypeAdapter<Product> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ProductAdapter &&
+      other is EmployeeAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

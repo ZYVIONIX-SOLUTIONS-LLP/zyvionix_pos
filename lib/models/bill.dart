@@ -38,6 +38,15 @@ class Bill extends HiveObject {
   @HiveField(10)
   DateTime timestamp;
 
+  @HiveField(11)
+  String? shopId;
+
+  @HiveField(12)
+  String? billedBy;
+
+  @HiveField(13)
+  String? billedByType;
+
   Bill({
     required this.id,
     required this.billNumber,
@@ -50,5 +59,8 @@ class Bill extends HiveObject {
     this.companyName,
     this.customerPhone,
     required this.timestamp,
+    this.shopId,
+    this.billedBy,
+    this.billedByType,
   });
 }
