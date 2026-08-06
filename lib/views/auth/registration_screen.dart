@@ -14,11 +14,8 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _companyNameController = TextEditingController();
-  final _companyAddressController = TextEditingController();
-  final _businessTypeController = TextEditingController();
+  final _ownerNameController = TextEditingController();
   final _mobileNumberController = TextEditingController();
-  final _gstController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -27,11 +24,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   void dispose() {
-    _companyNameController.dispose();
-    _companyAddressController.dispose();
-    _businessTypeController.dispose();
+    _ownerNameController.dispose();
     _mobileNumberController.dispose();
-    _gstController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -229,7 +223,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     // ),
                     // const SizedBox(height: 16),
                     Text(
-                      'Business Details',
+                      'Owner Details',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -238,31 +232,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     const SizedBox(height: 24),
 
                     _buildTextField(
-                      controller: _companyNameController,
-                      label: 'Company Name',
-                      icon: Icons.business,
-                    ),
-                    _buildTextField(
-                      controller: _companyAddressController,
-                      label: 'Company Address',
-                      icon: Icons.location_on_outlined,
-                    ),
-                    _buildTextField(
-                      controller: _businessTypeController,
-                      label: 'Business Type',
-                      icon: Icons.category_outlined,
+                      controller: _ownerNameController,
+                      label: 'Owner Name',
+                      icon: Icons.person_outline,
                     ),
                     _buildTextField(
                       controller: _mobileNumberController,
                       label: 'Mobile Number',
                       icon: Icons.phone_android,
                       keyboardType: TextInputType.phone,
-                    ),
-                    _buildTextField(
-                      controller: _gstController,
-                      label: 'GST Number',
-                      icon: Icons.receipt_long,
-                      isOptional: true,
                     ),
                     _buildTextField(
                       controller: _emailController,
@@ -343,16 +321,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
                                   final success = await authProvider.register(
-                                    companyName: _companyNameController.text
-                                        .trim(),
-                                    companyAddress: _companyAddressController
-                                        .text
-                                        .trim(),
-                                    businessType: _businessTypeController.text
-                                        .trim(),
-                                    mobileNumber: _mobileNumberController.text
-                                        .trim(),
-                                    gstNumber: _gstController.text.trim(),
+                                    ownerName: _ownerNameController.text.trim(),
+                                    mobileNumber: _mobileNumberController.text.trim(),
                                     email: _emailController.text.trim(),
                                     password: _passwordController.text,
                                     storagePreference: _storageType,

@@ -5,8 +5,48 @@ import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/models/product.dart';
 import 'package:zyvionix_pos/models/bill.dart';
 import 'package:zyvionix_pos/models/bill_item.dart';
+import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/main.dart';
+import 'package:zyvionix_pos/provider/auth_provider.dart';
+import 'package:zyvionix_pos/views/auth/login_screen.dart';
 
 class ApiService {
+  static void _checkDeviceLock(http.Response response) {
+    if (response.statusCode == 401) {
+      try {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 'DEVICE_LOGGED_OUT') {
+          AuthProvider().logout();
+          
+          if (navigatorKey.currentState != null) {
+            showDialog(
+              context: navigatorKey.currentState!.context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Session Expired'),
+                content: Text(data['message'] ?? 'Logged out.'),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      navigatorKey.currentState!.pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('OK'),
+                  )
+                ],
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Ignore decode errors
+      }
+    }
+  }
+
   static Future<Map<String, String>> _getHeaders() async {
     final box = HiveBoxes.getSettingsBox();
     final token = box.get('auth_token');
@@ -19,10 +59,15 @@ class ApiService {
   static Future<List<Product>> getProducts() async {
     try {
       final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      final url = shopId != null ? '${ApiConstants.productsUrl}?shopId=$shopId' : ApiConstants.productsUrl;
       final response = await http.get(
-        Uri.parse(ApiConstants.productsUrl),
+        Uri.parse(url),
         headers: headers,
       );
+
+      _checkDeviceLock(response);
 
       print('Response status code for get products ${response.statusCode}');
       print('Response bodyyyyyyyyyyyyyy for get products ${response.body}');
@@ -52,17 +97,24 @@ class ApiService {
   static Future<bool> addProduct(Product product) async {
     try {
       final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      final body = {
+        'id': product.id,
+        'name': product.name,
+        'price': product.price,
+        'category': product.category,
+        'imagePath': product.imagePath,
+      };
+      if (shopId != null) body['shopId'] = shopId;
+
       final response = await http.post(
         Uri.parse(ApiConstants.productsUrl),
         headers: headers,
-        body: jsonEncode({
-          'id': product.id,
-          'name': product.name,
-          'price': product.price,
-          'category': product.category,
-          'imagePath': product.imagePath,
-        }),
+        body: jsonEncode(body),
       );
+
+      _checkDeviceLock(response);
 
       print('Response status code for add product ${response.statusCode}');
       print('Response bodyyyyyyyyyyyyyyyy for add product ${response.body}');
@@ -76,16 +128,23 @@ class ApiService {
   static Future<bool> updateProduct(Product product) async {
     try {
       final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      final body = {
+        'name': product.name,
+        'price': product.price,
+        'category': product.category,
+        'imagePath': product.imagePath,
+      };
+      if (shopId != null) body['shopId'] = shopId;
+
       final response = await http.put(
         Uri.parse('${ApiConstants.productsUrl}/${product.id}'),
         headers: headers,
-        body: jsonEncode({
-          'name': product.name,
-          'price': product.price,
-          'category': product.category,
-          'imagePath': product.imagePath,
-        }),
+        body: jsonEncode(body),
       );
+
+      _checkDeviceLock(response);
 
       print('Response status code for updateee product ${response.statusCode}');
       print(
@@ -104,6 +163,7 @@ class ApiService {
         Uri.parse('${ApiConstants.productsUrl}/$id'),
         headers: headers,
       );
+      _checkDeviceLock(response);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -114,10 +174,14 @@ class ApiService {
   static Future<List<Bill>> getBills() async {
     try {
       final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      final url = shopId != null ? '${ApiConstants.billsUrl}?shopId=$shopId' : ApiConstants.billsUrl;
       final response = await http.get(
-        Uri.parse(ApiConstants.billsUrl),
+        Uri.parse(url),
         headers: headers,
       );
+      _checkDeviceLock(response);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) {
@@ -164,33 +228,41 @@ class ApiService {
   static Future<bool> addBill(Bill bill) async {
     try {
       final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      
+      final body = {
+        'id': bill.id,
+        'billNumber': bill.billNumber,
+        'date': bill.date.toIso8601String(),
+        'items': bill.items
+            .map(
+              (item) => {
+                'productId': item.product.id,
+                'name': item.product.name,
+                'price': item.price,
+                'quantity': item.quantity,
+                'total': item.total,
+              },
+            )
+            .toList(),
+        'subTotal': bill.subTotal,
+        'tax': bill.tax,
+        'grandTotal': bill.grandTotal,
+        'paymentMethod': bill.paymentMethod,
+        'companyName': bill.companyName ?? '',
+        'customerPhone': bill.customerPhone ?? '',
+        'timestamp': bill.timestamp.toIso8601String(),
+      };
+      
+      if (shopId != null) body['shopId'] = shopId;
+
       final response = await http.post(
         Uri.parse(ApiConstants.billsUrl),
         headers: headers,
-        body: jsonEncode({
-          'id': bill.id,
-          'billNumber': bill.billNumber,
-          'date': bill.date.toIso8601String(),
-          'items': bill.items
-              .map(
-                (item) => {
-                  'productId': item.product.id,
-                  'name': item.product.name,
-                  'price': item.price,
-                  'quantity': item.quantity,
-                  'total': item.total,
-                },
-              )
-              .toList(),
-          'subTotal': bill.subTotal,
-          'tax': bill.tax,
-          'grandTotal': bill.grandTotal,
-          'paymentMethod': bill.paymentMethod,
-          'companyName': bill.companyName ?? '',
-          'customerPhone': bill.customerPhone ?? '',
-          'timestamp': bill.timestamp.toIso8601String(),
-        }),
+        body: jsonEncode(body),
       );
+      _checkDeviceLock(response);
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       return false;
@@ -205,6 +277,7 @@ class ApiService {
         ApiConstants.productsUrl,
       ).replace(path: '/api/auth/profile');
       final response = await http.get(uri, headers: headers);
+      _checkDeviceLock(response);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -225,6 +298,7 @@ class ApiService {
         headers: headers,
         body: jsonEncode(data),
       );
+      _checkDeviceLock(response);
       if (response.statusCode == 200) {
         // Also update local hive settings if successful
         final box = HiveBoxes.getSettingsBox();
@@ -259,6 +333,7 @@ class ApiService {
         headers: headers,
         body: jsonEncode(payload),
       );
+      _checkDeviceLock(response);
 
       final data = jsonDecode(response.body);
 

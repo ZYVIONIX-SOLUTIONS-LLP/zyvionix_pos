@@ -13,8 +13,6 @@ class EditProfile extends StatefulWidget {
 
 class _EditProfileState extends State<EditProfile> {
   final _box = HiveBoxes.getSettingsBox();
-  late TextEditingController _nameController;
-  late TextEditingController _addressController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   bool _isLoading = true;
@@ -23,8 +21,6 @@ class _EditProfileState extends State<EditProfile> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _addressController = TextEditingController();
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
 
@@ -35,8 +31,6 @@ class _EditProfileState extends State<EditProfile> {
     final profile = await ApiService.getProfile();
     if (profile != null) {
       setState(() {
-        _nameController.text = profile['companyName'] ?? '';
-        _addressController.text = profile['companyAddress'] ?? '';
         _emailController.text = profile['email'] ?? '';
         _phoneController.text = profile['mobileNumber'] ?? '';
         _isLoading = false;
@@ -44,11 +38,6 @@ class _EditProfileState extends State<EditProfile> {
     } else {
       // Fallback to hive
       setState(() {
-        _nameController.text = _box.get(
-          'shop_name',
-          defaultValue: 'Zyvionix Solutions',
-        );
-        _addressController.text = _box.get('offline_company_address', defaultValue: '');
         _emailController.text = _box.get('user_email', defaultValue: '');
         _phoneController.text = _box.get('user_phone', defaultValue: '');
         _isLoading = false;
@@ -58,8 +47,6 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _addressController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -74,8 +61,6 @@ class _EditProfileState extends State<EditProfile> {
     bool success = false;
 
     final data = {
-      'companyName': _nameController.text.trim(),
-      'companyAddress': _addressController.text.trim(),
       'email': _emailController.text.trim(),
       'mobileNumber': _phoneController.text.trim(),
     };
@@ -85,11 +70,8 @@ class _EditProfileState extends State<EditProfile> {
 
     if (success || storageType == 'Device Storage') {
       // Update local storage so that offline components reflect the new profile
-      await _box.put('offline_company_name', _nameController.text.trim());
-      await _box.put('offline_company_address', _addressController.text.trim());
       await _box.put('offline_email', _emailController.text.trim());
       await _box.put('offline_mobile', _phoneController.text.trim());
-      await _box.put('shop_name', _nameController.text.trim());
       await _box.put('user_email', _emailController.text.trim());
       await _box.put('user_phone', _phoneController.text.trim());
       
@@ -175,16 +157,6 @@ class _EditProfileState extends State<EditProfile> {
                       )
                     : Column(
                         children: [
-                          CustomTextField(
-                            label: 'Company Name',
-                            controller: _nameController,
-                            prefixIcon: Icons.business_rounded,
-                          ),
-                          CustomTextField(
-                            label: 'Company Address',
-                            controller: _addressController,
-                            prefixIcon: Icons.location_on_outlined,
-                          ),
                           CustomTextField(
                             label: 'Email Address',
                             controller: _emailController,

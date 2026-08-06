@@ -13,6 +13,8 @@ import 'controllers/theme_controller.dart';
 import 'views/splash_screen.dart';
 import 'services/backup_service.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
@@ -71,6 +73,7 @@ class _ZyvionixPosAppState extends State<ZyvionixPosApp> with WidgetsBindingObse
     return Consumer<ThemeController>(
       builder: (context, themeController, _) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'Zyvionix POS',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,

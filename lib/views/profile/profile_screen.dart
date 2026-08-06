@@ -5,13 +5,20 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
-import 'package:zyvionix_pos/views/billing/bill_hystory.dart';
+import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 // import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
+import 'package:zyvionix_pos/views/settings/active_plan_screen.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
 import 'package:zyvionix_pos/views/auth/login_screen.dart';
+import 'package:zyvionix_pos/views/shops/manage_shops_screen.dart';
 import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
+import 'package:zyvionix_pos/provider/auth_provider.dart';
+import 'package:zyvionix_pos/views/settings/upgrade_plan_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
@@ -40,30 +47,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _handleConvertToCloud(BuildContext context) async {
-    final box = HiveBoxes.getSettingsBox();
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Convert to Cloud?'),
-        content: const Text(
-          'This will upload all your local products and bills to the cloud. You need an active internet connection.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Proceed'),
-          ),
-        ],
-      ),
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const UpgradePlanScreen()),
     );
+    if (result == true) {
+      _refreshProfile();
+      setState(() {});
+    }
+  }
 
-    if (confirm != true) return;
-
+  Future<void> _showShopSelectionDialog(BuildContext context) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -72,90 +66,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final box = HiveBoxes.getSettingsBox();
-      final productsBox = HiveBoxes.getProductsBox();
-      final billsBox = HiveBoxes.getBillsBox();
+      final token = box.get('auth_token');
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/shops'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
+      Navigator.pop(context); // close loading
 
-      final products =
-          productsBox?.values
-              .map(
-                (p) => {
-                  'id': p.id,
-                  'name': p.name,
-                  'price': p.price,
-                  'category': p.category,
-                  'imagePath': p.imagePath,
-                },
-              )
-              .toList() ??
-          [];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List shops = data['data'];
+        final currentShopId = box.get('current_shop_id');
 
-      final bills =
-          billsBox?.values
-              .map(
-                (b) => {
-                  'id': b.id,
-                  'billNumber': b.billNumber,
-                  'date': b.date.toIso8601String(),
-                  'items': b.items
-                      .map(
-                        (item) => {
-                          'productId': item.product.id,
-                          'name': item.product.name,
-                          'price': item.price,
-                          'quantity': item.quantity,
-                          'total': item.total,
-                        },
-                      )
-                      .toList(),
-                  'subTotal': b.subTotal,
-                  'tax': b.tax,
-                  'grandTotal': b.grandTotal,
-                  'paymentMethod': b.paymentMethod,
-                  'companyName': b.companyName ?? '',
-                  'customerPhone': b.customerPhone ?? '',
-                  'timestamp': b.timestamp.toIso8601String(),
-                },
-              )
-              .toList() ??
-          [];
-
-      final payload = {'products': products, 'bills': bills};
-
-      final result = await ApiService.syncToCloud(payload);
-      Navigator.pop(context);
-
-      if (result['success']) {
-        final data = result['data'];
-
-        await box.put('storageType', 'Cloud Storage');
-
-        if (mounted) {
-          context.read<ProductController>().init();
-          context.read<BillController>().init();
-          setState(() {});
-          floatingSnackBar(
-            message: 'Successfully converted to Cloud Storage!',
-            context: context,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
-      } else {
-        floatingSnackBar(
-          message: result['message'] ?? 'Failed to convert to cloud.',
+        if (!mounted) return;
+        showDialog(
           context: context,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('Select Shop'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: shops.length,
+                  itemBuilder: (context, index) {
+                    final shop = shops[index];
+                    return RadioListTile<String>(
+                      title: Text(shop['name']),
+                      subtitle: Text(shop['address'] ?? ''),
+                      value: shop['_id'],
+                      groupValue: currentShopId,
+                      onChanged: (value) async {
+                        await box.put('current_shop_id', value);
+                        await box.put('shop_name', shop['name']);
+                        await box.put('shop_id', value);
+                        await box.put('offline_company_address', shop['address'] ?? '');
+                        await box.put('shop_mobile', shop['mobile'] ?? '');
+                        if (mounted) {
+                           context.read<ProductController>().init();
+                           context.read<BillController>().init();
+                           setState(() {});
+                           Navigator.pop(ctx);
+                           floatingSnackBar(message: 'Switched to ${shop['name']}', context: context);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
         );
+      } else {
+        if (mounted) {
+           floatingSnackBar(message: 'Failed to fetch shops', context: context, backgroundColor: Colors.red, textColor: Colors.white);
+        }
       }
     } catch (e) {
-      Navigator.pop(context);
-      floatingSnackBar(
-        message: 'An error occurred. Please try again.',
-        context: context,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      Navigator.pop(context); // close loading
+      if (mounted) {
+         floatingSnackBar(message: 'Network error', context: context, backgroundColor: Colors.red, textColor: Colors.white);
+      }
     }
   }
 
@@ -163,6 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final box = HiveBoxes.getSettingsBox();
     final storageType = box.get('storageType', defaultValue: 'Device Storage');
+    final isEmployee = box.get('user_role') == 'Employee';
 
     return PopScope(
       canPop: false,
@@ -193,76 +172,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => BillHystory(),
+                            builder: (context) => const BillHistoryScreen(),
                           ),
                         );
                       },
                     ),
-                    _divider(),
-                    _buildMenuItem(
-                      icon: Icons.person_outline_rounded,
-                      iconColor: Colors.blue,
-                      title: 'Edit Profile',
-                      subtitle: 'Update your personal information',
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditProfile(),
-                          ),
-                        );
-
-                        if (result == true) {
-                          _refreshProfile();
-                        }
-
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => EditProfile(),
-                        //   ),
-                        // );
-                      },
-                    ),
-                    // _divider(),
-                    // _buildMenuItem(
-                    //   icon: Icons.notifications_none_rounded,
-                    //   iconColor: Colors.orange,
-                    //   title: 'Notifications',
-                    //   subtitle: 'Manage notification preferences',
-                    //   onTap: () {
-                    //     Navigator.push(
-                    //       context,
-                    //       MaterialPageRoute(
-                    //         builder: (context) => NotificationScreen(),
-                    //       ),
-                    //     );
-                    //   },
-                    // ),
-                    _divider(),
-                    _buildMenuItem(
-                      icon: Icons.cloud_circle_rounded,
-                      iconColor: const Color(0xFF1EA1F2),
-                      title: 'Subscription Plans',
-                      subtitle: 'View and upgrade cloud plans',
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: true,
-                          builder: (context) => const SubscriptionModal(),
-                        );
-                      },
-                    ),
-                    if (storageType == 'Device Storage') ...[
+                    if (!isEmployee) ...[
                       _divider(),
                       _buildMenuItem(
-                        icon: Icons.cloud_upload_rounded,
-                        iconColor: Colors.blueAccent,
-                        title: 'Convert to Cloud',
-                        subtitle:
-                            'Backup and sync all offline data to the cloud',
+                        icon: Icons.person_outline_rounded,
+                        iconColor: Colors.blue,
+                        title: 'Edit Profile',
+                        subtitle: 'Update your personal information',
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditProfile(),
+                            ),
+                          );
+
+                          if (result == true) {
+                            _refreshProfile();
+                          }
+                        },
+                      ),
+                      _divider(),
+                      _buildMenuItem(
+                        icon: Icons.cloud_circle_rounded,
+                        iconColor: const Color(0xFF1EA1F2),
+                        title: 'Subscription Plans',
+                        subtitle: 'View and upgrade cloud plans',
                         onTap: () {
-                          _handleConvertToCloud(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ActivePlanScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      if (storageType == 'Device Storage') ...[
+                        _divider(),
+                        _buildMenuItem(
+                          icon: Icons.cloud_upload_rounded,
+                          iconColor: Colors.blueAccent,
+                          title: 'Convert to Cloud',
+                          subtitle:
+                              'Backup and sync all offline data to the cloud',
+                          onTap: () {
+                            _handleConvertToCloud(context);
+                          },
+                        ),
+                      ],
+                    ],
+                    if (storageType == 'Cloud Storage' && box.get('user_role') == 'Owner') ...[
+                      _divider(),
+                      _buildMenuItem(
+                        icon: Icons.storefront_rounded,
+                        iconColor: Colors.deepOrange,
+                        title: 'Manage Shops',
+                        subtitle: 'View and manage your shops',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ManageShopsScreen(),
+                            ),
+                          ).then((_) {
+                            _refreshProfile();
+                          });
                         },
                       ),
                     ],

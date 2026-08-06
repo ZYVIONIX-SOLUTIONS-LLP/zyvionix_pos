@@ -150,11 +150,11 @@ class BackupService {
       final payload = {
         'timestamp': DateTime.now().toIso8601String(),
         'userId': userId,
-        'offline_company_name': box.get('offline_company_name'),
+        'shop_id': box.get('shop_id'),
+        'shop_name': box.get('shop_name'),
+        'current_shop_id': box.get('current_shop_id'),
+        'shop_mobile': box.get('shop_mobile'),
         'offline_company_address': box.get('offline_company_address'),
-        'offline_business_type': box.get('offline_business_type'),
-        'offline_email': box.get('offline_email'),
-        'offline_gst': box.get('offline_gst'),
         'products': products,
         'bills': bills,
       };
@@ -182,19 +182,11 @@ class BackupService {
       print("Bills in JSON: ${(data['bills'] as List?)?.length}");
 
       final box = HiveBoxes.getSettingsBox();
-      if (data['offline_company_name'] != null)
-        await box.put('offline_company_name', data['offline_company_name']);
-      if (data['offline_company_address'] != null)
-        await box.put(
-          'offline_company_address',
-          data['offline_company_address'],
-        );
-      if (data['offline_business_type'] != null)
-        await box.put('offline_business_type', data['offline_business_type']);
-      if (data['offline_email'] != null)
-        await box.put('offline_email', data['offline_email']);
-      if (data['offline_gst'] != null)
-        await box.put('offline_gst', data['offline_gst']);
+      if (data['shop_id'] != null) await box.put('shop_id', data['shop_id']);
+      if (data['shop_name'] != null) await box.put('shop_name', data['shop_name']);
+      if (data['current_shop_id'] != null) await box.put('current_shop_id', data['current_shop_id']);
+      if (data['shop_mobile'] != null) await box.put('shop_mobile', data['shop_mobile']);
+      if (data['offline_company_address'] != null) await box.put('offline_company_address', data['offline_company_address']);
 
       final appDir = await getApplicationDocumentsDirectory();
 

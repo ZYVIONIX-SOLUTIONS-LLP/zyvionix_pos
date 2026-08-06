@@ -7,6 +7,7 @@ import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/billing/cart_screen.dart';
 import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
+import 'package:zyvionix_pos/database/hive_boxes.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -19,6 +20,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
   String selectedCategory = "All";
+  bool _isEmployee = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final box = HiveBoxes.getSettingsBox();
+    _isEmployee = box.get('user_role') == 'Employee';
+  }
 
   @override
   void dispose() {
@@ -122,24 +131,26 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1EA1F2).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                  if (!_isEmployee) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1EA1F2).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.add, color: Color(0xFF1EA1F2)),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddEditProductScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Color(0xFF1EA1F2)),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddEditProductScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -348,24 +359,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       ],
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.edit_outlined,
-                                      color: Colors.grey,
-                                      size: 22,
+                                  if (!_isEmployee)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.grey,
+                                        size: 22,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                AddEditProductScreen(
+                                                  product: productObj,
+                                                ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AddEditProductScreen(
-                                                product: productObj,
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  ),
                                   if (isInCart)
                                     const Padding(
                                       padding: EdgeInsets.only(right: 4),

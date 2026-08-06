@@ -16,30 +16,11 @@ class PdfService {
     String address = '';
     String phone = '';
 
-    try {
-      final profile = await ApiService.getProfile();
-      if (profile != null) {
-        companyName = profile['companyName'] ?? companyName;
-        address = profile['companyAddress'] ?? '';
-        phone = profile['mobileNumber'] != null
-            ? 'Ph: ${profile['mobileNumber']}'
-            : '';
-      } else {
-        final box = HiveBoxes.getSettingsBox();
-        companyName = box.get('shop_name', defaultValue: companyName);
-        address = box.get('offline_company_address', defaultValue: '');
-        phone = box.get('user_phone') != null
-            ? 'Ph: ${box.get('user_phone')}'
-            : '';
-      }
-    } catch (e) {
-      final box = HiveBoxes.getSettingsBox();
-      companyName = box.get('shop_name', defaultValue: companyName);
-      address = box.get('offline_company_address', defaultValue: '');
-      phone = box.get('user_phone') != null
-          ? 'Ph: ${box.get('user_phone')}'
-          : '';
-    }
+    final box = HiveBoxes.getSettingsBox();
+    companyName = box.get('shop_name', defaultValue: companyName);
+    address = box.get('offline_company_address', defaultValue: '');
+    String rawPhone = box.get('shop_mobile') ?? box.get('user_phone') ?? '';
+    phone = rawPhone.isNotEmpty ? 'Ph: $rawPhone' : '';
 
     pdf.addPage(
       pw.Page(

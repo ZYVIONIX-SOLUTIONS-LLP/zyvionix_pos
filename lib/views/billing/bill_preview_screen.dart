@@ -416,44 +416,13 @@ class ThermalReceiptCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                FutureBuilder<Map<String, dynamic>?>(
-                  future: ApiService.getProfile(),
-                  builder: (context, snapshot) {
-                    String companyName = 'ZYVIONIX POS';
-                    String address = 'Ernakulam, Kochi';
-                    String phone = 'Ph: 6282714883';
-
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      );
-                    }
-
-                    if (snapshot.hasData && snapshot.data != null) {
-                      companyName =
-                          snapshot.data!['companyName'] ?? companyName;
-                      address = snapshot.data!['companyAddress'] ?? address;
-                      phone = 'Ph: ${snapshot.data!['mobileNumber'] ?? 'N/A'}';
-                    } else {
-                      final box = HiveBoxes.getSettingsBox();
-                      companyName = box.get(
-                        'shop_name',
-                        defaultValue: companyName,
-                      );
-                      phone =
-                          'Ph: ${box.get('user_phone', defaultValue: 'N/A')}';
-                      address = box.get(
-                        'offline_company_address',
-                        defaultValue: '',
-                      );
-                    }
+                Builder(
+                  builder: (context) {
+                    final box = HiveBoxes.getSettingsBox();
+                    String companyName = box.get('shop_name', defaultValue: 'ZYVIONIX POS');
+                    String address = box.get('offline_company_address', defaultValue: '');
+                    String rawPhone = box.get('shop_mobile') ?? box.get('user_phone') ?? '';
+                    String phone = rawPhone.isNotEmpty ? 'Ph: $rawPhone' : '';
 
                     return Column(
                       children: [
@@ -479,13 +448,14 @@ class ThermalReceiptCard extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                        Center(
-                          child: Text(
-                            phone,
-                            style: _mono,
-                            textAlign: TextAlign.center,
+                        if (phone.isNotEmpty)
+                          Center(
+                            child: Text(
+                              phone,
+                              style: _mono,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                        ),
                       ],
                     );
                   },

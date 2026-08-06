@@ -4,6 +4,7 @@ import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/billing/billing_screen.dart';
 import 'package:zyvionix_pos/views/home_screen.dart';
+import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 import 'package:zyvionix_pos/views/profile/profile_screen.dart';
 import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 
@@ -15,15 +16,21 @@ class NavbarScreen extends StatefulWidget {
 }
 
 class _NavbarScreenState extends State<NavbarScreen> {
-  static const List<Widget> _pages = [
-    HomeScreen(),
-    BillingScreen(),
-    ProfileScreen(),
-  ];
+  late List<Widget> _pages;
+  bool _isEmployee = false;
 
   @override
   void initState() {
     super.initState();
+    final box = HiveBoxes.getSettingsBox();
+    _isEmployee = box.get('user_role') == 'Employee';
+    
+    _pages = [
+      _isEmployee ? const BillHistoryScreen() : const HomeScreen(),
+      const BillingScreen(),
+      const ProfileScreen(),
+    ];
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSubscription();
     });
@@ -83,8 +90,8 @@ class _NavbarScreenState extends State<NavbarScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavItem(
-                      icon: Icons.home_rounded,
-                      label: 'Home',
+                      icon: _isEmployee ? Icons.history_rounded : Icons.home_rounded,
+                      label: _isEmployee ? 'History' : 'Home',
                       isSelected: currentIndex == 0,
                       onTap: () => navProvider.setIndex(0),
                     ),

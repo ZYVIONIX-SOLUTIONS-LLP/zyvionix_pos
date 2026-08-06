@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/views/auth/device_override_otp_screen.dart';
 import 'package:zyvionix_pos/views/auth/registration_screen.dart';
+import 'package:zyvionix_pos/views/auth/select_assigned_shop_screen.dart';
 import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
@@ -19,6 +21,39 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isEmployeeLogin = false;
+
+  void _showDeviceOverrideDialog(Map<String, dynamic> result) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Device Lock Active'),
+        content: Text(result['message'] ?? 'Already logged in on another device.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DeviceOverrideOtpScreen(
+                    mobileNumber: result['mobileNumber'] ?? _emailController.text.trim(),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1EA1F2)),
+            child: const Text('Continue with new device', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -84,32 +119,102 @@ class _LoginScreenState extends State<LoginScreen> {
                         ).textTheme.bodyMedium?.color?.withOpacity(0.6),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    
+                    // Owner / Employee Toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isEmployeeLogin = false;
+                                  _emailController.clear();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: !_isEmployeeLogin ? const Color(0xFF1EA1F2) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Owner',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: !_isEmployeeLogin ? Colors.white : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isEmployeeLogin = true;
+                                  _emailController.clear();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _isEmployeeLogin ? const Color(0xFF1EA1F2) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Employee',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: _isEmployeeLogin ? Colors.white : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 32),
 
                     // Username / Email Field
                     TextFormField(
                       controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      keyboardType: _isEmployeeLogin ? TextInputType.phone : TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter username, email or mobile';
+                          return _isEmployeeLogin ? 'Please enter mobile number' : 'Please enter username, email or mobile';
                         }
-                        if (value.contains('@')) {
-                          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                          if (!emailRegex.hasMatch(value)) {
-                            return 'Please enter a valid email address';
-                          }
-                        } else if (RegExp(r'^\d+$').hasMatch(value)) {
-                          if (value.length != 10) {
+                        
+                        if (_isEmployeeLogin) {
+                          if (value.length != 10 || !RegExp(r'^\d+$').hasMatch(value)) {
                             return 'Mobile number must be exactly 10 digits';
+                          }
+                        } else {
+                          if (value.contains('@')) {
+                            final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                            if (!emailRegex.hasMatch(value)) {
+                              return 'Please enter a valid email address';
+                            }
+                          } else if (RegExp(r'^\d+$').hasMatch(value)) {
+                            if (value.length != 10) {
+                              return 'Mobile number must be exactly 10 digits';
+                            }
                           }
                         }
                         return null;
                       },
                       decoration: InputDecoration(
-                        labelText: 'Username or Email',
-                        prefixIcon: const Icon(Icons.person_outline),
+                        labelText: _isEmployeeLogin ? 'Mobile Number' : 'Username or Email',
+                        prefixIcon: Icon(_isEmployeeLogin ? Icons.phone_android : Icons.person_outline),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -184,11 +289,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ElevatedButton(
                               onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
-                                  final success = await authProvider.login(
+                                  final result = await authProvider.login(
                                     _emailController.text.trim(),
                                     _passwordController.text,
                                   );
-                                  if (success && mounted) {
+                                  if (result['success'] == true && mounted) {
                                     context.read<ProductController>().init();
                                     context.read<BillController>().init();
                                     
@@ -200,12 +305,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                       duration: const Duration(seconds: 2),
                                     );
 
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const NavbarScreen(),
-                                      ),
-                                    );
+                                    if (result['role'] == 'Employee') {
+                                      final assignedShops = result['assignedShops'] as List<dynamic>?;
+                                      if (assignedShops == null || assignedShops.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('No shops assigned to your account. Contact owner.')),
+                                        );
+                                      } else {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => SelectAssignedShopScreen(assignedShops: assignedShops),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const NavbarScreen(),
+                                        ),
+                                      );
+                                    }
+                                  } else if (result['isDeviceMismatch'] == true && mounted) {
+                                    _showDeviceOverrideDialog(result);
                                   } else if (mounted && authProvider.errorMessage.isNotEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -240,38 +363,39 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                     // Register Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account?",
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    if (!_isEmployeeLogin)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account?",
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RegistrationScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Register',
+                              style: TextStyle(
+                                color: Color(0xFF1EA1F2),
+                                fontWeight: FontWeight.bold,
                               ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RegistrationScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Register',
-                            style: TextStyle(
-                              color: Color(0xFF1EA1F2),
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
               ),

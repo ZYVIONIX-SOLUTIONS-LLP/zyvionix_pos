@@ -11,6 +11,7 @@ import '../services/backup_service.dart';
 import 'billing/bill_preview_screen.dart';
 import '../controllers/bill_controller.dart';
 import '../controllers/product_controller.dart';
+import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,13 +57,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkBackup();
+      _checkBackupAndShop();
     });
   }
 
-  Future<void> _checkBackup() async {
+  Future<void> _checkBackupAndShop() async {
     final box = HiveBoxes.getSettingsBox();
     final storageType = box.get('storageType', defaultValue: 'Device Storage');
+    
     if (storageType == 'Device Storage') {
       final userId = box.get('user_id') ?? '';
       if (userId.isNotEmpty) {
@@ -71,9 +73,26 @@ class _HomeScreenState extends State<HomeScreen> {
           final productsBox = HiveBoxes.getProductsBox();
           if (productsBox != null && productsBox.isEmpty) {
             _showRestorePopup(userId);
+            return; // Stop here. We will check shop after the popup.
           }
         }
       }
+    }
+    
+    _checkShop();
+  }
+
+  Future<void> _checkShop() async {
+    final box = HiveBoxes.getSettingsBox();
+    final shopId = box.get('shop_id');
+    final userRole = box.get('user_role', defaultValue: 'Owner');
+    
+    if (shopId == null && userRole == 'Owner') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const CreateShopScreen(isForced: true),
+        ),
+      );
     }
   }
 
@@ -92,7 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _checkShop();
+              },
               child: const Text('Skip'),
             ),
             ElevatedButton(
@@ -125,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }
+                  _checkShop();
                 }
               },
               child: const Text('Restore'),
