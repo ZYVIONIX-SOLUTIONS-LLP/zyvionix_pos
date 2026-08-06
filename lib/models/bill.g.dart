@@ -34,7 +34,7 @@ class BillAdapter extends TypeAdapter<Bill> {
   @override
   void write(BinaryWriter writer, Bill obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +56,8 @@ class BillAdapter extends TypeAdapter<Bill> {
       ..writeByte(9)
       ..write(obj.customerPhone)
       ..writeByte(10)
-      ..write(obj.timestamp);
+      ..write(obj.timestamp)
+      ..writeByte(11);
   }
 
   @override

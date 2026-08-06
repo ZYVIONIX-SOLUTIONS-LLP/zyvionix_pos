@@ -63,6 +63,10 @@ class ApiService {
           'imagePath': product.imagePath,
         }),
       );
+
+      print('Response status code for add product ${response.statusCode}');
+      print('Response bodyyyyyyyyyyyyyyyy for add product ${response.body}');
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       return false;
@@ -81,6 +85,11 @@ class ApiService {
           'category': product.category,
           'imagePath': product.imagePath,
         }),
+      );
+
+      print('Response status code for updateee product ${response.statusCode}');
+      print(
+        'Response bodyyyyyyyyyyyyyyyy for updateeeee product ${response.body}',
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -235,4 +244,74 @@ class ApiService {
     }
     return false;
   }
+
+  static Future<Map<String, dynamic>> syncToCloud(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final headers = await _getHeaders();
+      final uri = Uri.parse(
+        ApiConstants.productsUrl,
+      ).replace(path: '/api/auth/sync-to-cloud');
+
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      final data = jsonDecode(response.body);
+
+      print(
+        'Response status code for updating to cloud storage ${response.statusCode}',
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to convert to cloud',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error. Please try again later.',
+      };
+    }
+  }
+
+  // static Future<Map<String, dynamic>> syncToCloud(
+  //   Map<String, dynamic> payload,
+  // ) async {
+  //   try {
+  //     final headers = await _getHeaders();
+  //     final uri = Uri.parse(
+  //       ApiConstants.productsUrl,
+  //     ).replace(path: '/api/auth/sync-to-cloud');
+
+  //     final response = await http.post(
+  //       uri,
+  //       headers: headers,
+  //       body: jsonEncode(payload),
+  //     );
+
+  //     final data = jsonDecode(response.body);
+
+  //     if (response.statusCode == 200) {
+  //       return {'success': true, 'data': data};
+  //     } else {
+  //       return {
+  //         'success': false,
+  //         'message': data['message'] ?? 'Failed to sync to cloud',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {
+  //       'success': false,
+  //       'message': 'Connection error. Please try again later.',
+  //     };
+  //   }
+  // }
 }

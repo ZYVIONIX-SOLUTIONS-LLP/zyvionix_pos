@@ -27,6 +27,7 @@ class PdfService {
       } else {
         final box = HiveBoxes.getSettingsBox();
         companyName = box.get('shop_name', defaultValue: companyName);
+        address = box.get('offline_company_address', defaultValue: '');
         phone = box.get('user_phone') != null
             ? 'Ph: ${box.get('user_phone')}'
             : '';
@@ -34,6 +35,7 @@ class PdfService {
     } catch (e) {
       final box = HiveBoxes.getSettingsBox();
       companyName = box.get('shop_name', defaultValue: companyName);
+      address = box.get('offline_company_address', defaultValue: '');
       phone = box.get('user_phone') != null
           ? 'Ph: ${box.get('user_phone')}'
           : '';

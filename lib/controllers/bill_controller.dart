@@ -5,6 +5,7 @@ import '../models/bill.dart';
 import '../models/bill_item.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
+import '../services/backup_service.dart';
 
 class BillController extends ChangeNotifier {
   Box<Bill>? _billsBox;
@@ -158,6 +159,8 @@ class BillController extends ChangeNotifier {
     } else {
       if (_billsBox != null) {
         await _billsBox!.put(newBill.id, newBill);
+        final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
+        await BackupService.backupData(userId);
       }
     }
 

@@ -7,8 +7,10 @@ import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
+import '../services/backup_service.dart';
 import 'billing/bill_preview_screen.dart';
 import '../controllers/bill_controller.dart';
+import '../controllers/product_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +54,85 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBackup();
+    });
+  }
+
+  Future<void> _checkBackup() async {
+    final box = HiveBoxes.getSettingsBox();
+    final storageType = box.get('storageType', defaultValue: 'Device Storage');
+    if (storageType == 'Device Storage') {
+      final userId = box.get('user_id') ?? '';
+      if (userId.isNotEmpty) {
+        final hasBackup = await BackupService.checkBackupExists(userId);
+        if (hasBackup) {
+          final productsBox = HiveBoxes.getProductsBox();
+          if (productsBox != null && productsBox.isEmpty) {
+            _showRestorePopup(userId);
+          }
+        }
+      }
+    }
+  }
+
+  void _showRestorePopup(String userId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Restore Backup Data'),
+          content: const Text(
+            'We found an offline backup linked to this device storage account. Do you want to restore your products and bills?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Skip'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) =>
+                      const Center(child: CircularProgressIndicator()),
+                );
+
+                final success = await BackupService.restoreData(userId);
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  if (success) {
+                    context.read<ProductController>().init();
+                    context.read<BillController>().init();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.green,
+                        content: Text('Backup restored successfully!'),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to restore backup.'),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Restore'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

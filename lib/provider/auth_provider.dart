@@ -58,6 +58,7 @@ class AuthProvider extends ChangeNotifier {
         if (data['user']['companyName'] != null) {
           await box.put('shop_name', data['user']['companyName']);
         }
+        await box.put('user_email', data['user']['email'] ?? '');
 
         await HiveBoxes.openUserBoxes(userId);
 
@@ -69,9 +70,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _setErrorMessage(
-        'Connection error: Please check your server or network.',
-      );
+      _setErrorMessage('Connection error: Please check your server or network.');
       _setLoading(false);
       return false;
     }

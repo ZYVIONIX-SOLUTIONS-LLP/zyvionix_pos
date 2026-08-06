@@ -48,6 +48,7 @@ class _EditProfileState extends State<EditProfile> {
           'shop_name',
           defaultValue: 'Zyvionix Solutions',
         );
+        _addressController.text = _box.get('offline_company_address', defaultValue: '');
         _emailController.text = _box.get('user_email', defaultValue: '');
         _phoneController.text = _box.get('user_phone', defaultValue: '');
         _isLoading = false;
@@ -69,6 +70,9 @@ class _EditProfileState extends State<EditProfile> {
       _isSaving = true;
     });
 
+    final storageType = _box.get('storageType', defaultValue: 'Device Storage');
+    bool success = false;
+
     final data = {
       'companyName': _nameController.text.trim(),
       'companyAddress': _addressController.text.trim(),
@@ -76,7 +80,23 @@ class _EditProfileState extends State<EditProfile> {
       'mobileNumber': _phoneController.text.trim(),
     };
 
-    final success = await ApiService.updateProfile(data);
+    // Always attempt to update the backend profile since all users are in MongoDB
+    success = await ApiService.updateProfile(data);
+
+    if (success || storageType == 'Device Storage') {
+      // Update local storage so that offline components reflect the new profile
+      await _box.put('offline_company_name', _nameController.text.trim());
+      await _box.put('offline_company_address', _addressController.text.trim());
+      await _box.put('offline_email', _emailController.text.trim());
+      await _box.put('offline_mobile', _phoneController.text.trim());
+      await _box.put('shop_name', _nameController.text.trim());
+      await _box.put('user_email', _emailController.text.trim());
+      await _box.put('user_phone', _phoneController.text.trim());
+      
+      if (storageType == 'Device Storage') {
+        success = true; // In device storage, we consider local update a success even if API fails (offline)
+      }
+    }
 
     if (mounted) {
       setState(() {
@@ -93,8 +113,6 @@ class _EditProfileState extends State<EditProfile> {
             ),
           ),
         );
-        // Navigator.pop(context);
-
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

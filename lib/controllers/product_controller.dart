@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
+import '../services/backup_service.dart';
 
 class ProductController extends ChangeNotifier {
   Box<Product>? _productsBox;
@@ -80,6 +81,8 @@ class ProductController extends ChangeNotifier {
     } else {
       if (_productsBox != null) {
         await _productsBox!.put(product.id, product);
+        final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
+        await BackupService.backupData(userId);
         await loadProducts();
       }
     }
@@ -91,6 +94,8 @@ class ProductController extends ChangeNotifier {
       if (success) await loadProducts();
     } else {
       await product.save();
+      final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
+      await BackupService.backupData(userId);
       await loadProducts();
     }
   }
@@ -101,6 +106,8 @@ class ProductController extends ChangeNotifier {
       if (success) await loadProducts();
     } else {
       await product.delete();
+      final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
+      await BackupService.backupData(userId);
       await loadProducts();
     }
   }

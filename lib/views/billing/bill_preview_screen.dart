@@ -207,7 +207,9 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
           xFile,
         ], text: 'Receipt for Bill #${widget.bill.billNumber}');
       } else {
-        RenderRepaintBoundary boundary = _receiptKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        RenderRepaintBoundary boundary =
+            _receiptKey.currentContext!.findRenderObject()
+                as RenderRepaintBoundary;
         ui.Image image = await boundary.toImage(pixelRatio: 3.0);
         var byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData != null) {
@@ -332,7 +334,8 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
             icon: const Icon(Icons.print),
             onPressed: () async {
               await Printing.layoutPdf(
-                onLayout: (PdfPageFormat format) async => PdfService.generateReceipt(widget.bill),
+                onLayout: (PdfPageFormat format) async =>
+                    PdfService.generateReceipt(widget.bill),
               );
             },
           ),
@@ -342,9 +345,7 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(
                     Icons.bluetooth_connected,
@@ -421,29 +422,37 @@ class ThermalReceiptCard extends StatelessWidget {
                     String companyName = 'ZYVIONIX POS';
                     String address = 'Ernakulam, Kochi';
                     String phone = 'Ph: 6282714883';
-                    
+
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: SizedBox(
-                            width: 20, height: 20, 
-                            child: CircularProgressIndicator(strokeWidth: 2)
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
                       );
                     }
 
                     if (snapshot.hasData && snapshot.data != null) {
-                      companyName = snapshot.data!['companyName'] ?? companyName;
+                      companyName =
+                          snapshot.data!['companyName'] ?? companyName;
                       address = snapshot.data!['companyAddress'] ?? address;
                       phone = 'Ph: ${snapshot.data!['mobileNumber'] ?? 'N/A'}';
                     } else {
                       final box = HiveBoxes.getSettingsBox();
-                      companyName = box.get('shop_name', defaultValue: companyName);
-                      // Hive doesn't explicitly store company address right now, so fallback to email/phone
-                      phone = 'Ph: ${box.get('user_phone', defaultValue: 'N/A')}';
-                      address = ''; // Clear hardcoded address if using offline fallback
+                      companyName = box.get(
+                        'shop_name',
+                        defaultValue: companyName,
+                      );
+                      phone =
+                          'Ph: ${box.get('user_phone', defaultValue: 'N/A')}';
+                      address = box.get(
+                        'offline_company_address',
+                        defaultValue: '',
+                      );
                     }
 
                     return Column(
@@ -463,8 +472,20 @@ class ThermalReceiptCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         if (address.isNotEmpty)
-                          Center(child: Text(address, style: _mono, textAlign: TextAlign.center)),
-                        Center(child: Text(phone, style: _mono, textAlign: TextAlign.center)),
+                          Center(
+                            child: Text(
+                              address,
+                              style: _mono,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        Center(
+                          child: Text(
+                            phone,
+                            style: _mono,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -563,10 +584,7 @@ class ThermalReceiptCard extends StatelessWidget {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Text(
-                            item.product.name,
-                            style: _mono,
-                          ),
+                          child: Text(item.product.name, style: _mono),
                         ),
                         Expanded(
                           flex: 1,
@@ -579,6 +597,7 @@ class ThermalReceiptCard extends StatelessWidget {
                           flex: 2,
                           child: _SingleLineCell(
                             text: item.price.toStringAsFixed(2),
+
                             align: Alignment.centerRight,
                           ),
                         ),
@@ -696,6 +715,7 @@ class _SingleLineCell extends StatelessWidget {
         alignment: align,
         child: Text(
           text,
+
           maxLines: 1,
           softWrap: false,
           style: ThermalReceiptCard._mono,

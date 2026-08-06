@@ -11,6 +11,7 @@ import 'controllers/product_controller.dart';
 import 'controllers/bill_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'views/splash_screen.dart';
+import 'services/backup_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,8 +32,39 @@ void main() async {
   );
 }
 
-class ZyvionixPosApp extends StatelessWidget {
+class ZyvionixPosApp extends StatefulWidget {
   const ZyvionixPosApp({super.key});
+
+  @override
+  State<ZyvionixPosApp> createState() => _ZyvionixPosAppState();
+}
+
+class _ZyvionixPosAppState extends State<ZyvionixPosApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      final box = HiveBoxes.getSettingsBox();
+      final storageType = box.get('storageType', defaultValue: 'Device Storage');
+      if (storageType == 'Device Storage') {
+        final userId = box.get('user_id') ?? '';
+        if (userId.isNotEmpty) {
+          BackupService.backupData(userId);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +109,10 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
         final userId = box.get('user_id');
         if (userId != null) {
           await HiveBoxes.openUserBoxes(userId);
+        }
+        if (mounted) {
+          context.read<ProductController>().init();
+          context.read<BillController>().init();
         }
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const NavbarScreen()));

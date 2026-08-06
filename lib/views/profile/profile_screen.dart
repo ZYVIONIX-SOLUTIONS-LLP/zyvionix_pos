@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -37,8 +39,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _handleConvertToCloud(BuildContext context) async {
+    final box = HiveBoxes.getSettingsBox();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convert to Cloud?'),
+        content: const Text(
+          'This will upload all your local products and bills to the cloud. You need an active internet connection.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Proceed'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final box = HiveBoxes.getSettingsBox();
+      final productsBox = HiveBoxes.getProductsBox();
+      final billsBox = HiveBoxes.getBillsBox();
+
+      final products =
+          productsBox?.values
+              .map(
+                (p) => {
+                  'id': p.id,
+                  'name': p.name,
+                  'price': p.price,
+                  'category': p.category,
+                  'imagePath': p.imagePath,
+                },
+              )
+              .toList() ??
+          [];
+
+      final bills =
+          billsBox?.values
+              .map(
+                (b) => {
+                  'id': b.id,
+                  'billNumber': b.billNumber,
+                  'date': b.date.toIso8601String(),
+                  'items': b.items
+                      .map(
+                        (item) => {
+                          'productId': item.product.id,
+                          'name': item.product.name,
+                          'price': item.price,
+                          'quantity': item.quantity,
+                          'total': item.total,
+                        },
+                      )
+                      .toList(),
+                  'subTotal': b.subTotal,
+                  'tax': b.tax,
+                  'grandTotal': b.grandTotal,
+                  'paymentMethod': b.paymentMethod,
+                  'companyName': b.companyName ?? '',
+                  'customerPhone': b.customerPhone ?? '',
+                  'timestamp': b.timestamp.toIso8601String(),
+                },
+              )
+              .toList() ??
+          [];
+
+      final payload = {'products': products, 'bills': bills};
+
+      final result = await ApiService.syncToCloud(payload);
+      Navigator.pop(context);
+
+      if (result['success']) {
+        final data = result['data'];
+
+        await box.put('storageType', 'Cloud Storage');
+
+        if (mounted) {
+          context.read<ProductController>().init();
+          context.read<BillController>().init();
+          setState(() {});
+          floatingSnackBar(
+            message: 'Successfully converted to Cloud Storage!',
+            context: context,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+          );
+        }
+      } else {
+        floatingSnackBar(
+          message: result['message'] ?? 'Failed to convert to cloud.',
+          context: context,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      floatingSnackBar(
+        message: 'An error occurred. Please try again.',
+        context: context,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final box = HiveBoxes.getSettingsBox();
+    final storageType = box.get('storageType', defaultValue: 'Device Storage');
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -128,6 +253,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
+                    if (storageType == 'Device Storage') ...[
+                      _divider(),
+                      _buildMenuItem(
+                        icon: Icons.cloud_upload_rounded,
+                        iconColor: Colors.blueAccent,
+                        title: 'Convert to Cloud',
+                        subtitle:
+                            'Backup and sync all offline data to the cloud',
+                        onTap: () {
+                          _handleConvertToCloud(context);
+                        },
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -209,8 +347,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final email =
             profile?['email'] ??
             HiveBoxes.getSettingsBox().get('user_email', defaultValue: '');
-        final mobile = profile?['mobileNumber'] ?? '';
-        final address = profile?['companyAddress'] ?? '';
+        final mobile =
+            profile?['mobileNumber'] ??
+            HiveBoxes.getSettingsBox().get('user_phone', defaultValue: '');
+        final address =
+            profile?['companyAddress'] ??
+            HiveBoxes.getSettingsBox().get(
+              'offline_company_address',
+              defaultValue: '',
+            );
 
         return Container(
           width: double.infinity,
