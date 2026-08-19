@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/widgets/primary_button.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
@@ -24,16 +25,16 @@ class ShopDashboardScreen extends StatelessWidget {
     await box.put('shop_id', shop['_id']);
     await box.put('shop_name', shop['name']);
     await box.put('current_shop_id', shop['_id']);
-    
+
     if (context.mounted) {
       context.read<ProductController>().init();
       context.read<BillController>().init();
-      
-      floatingSnackBar(
-        message: 'Active shop changed successfully',
-        context: context,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
+
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.success(
+          message: 'Active shop changed successfully',
+        ),
       );
       onStatusChanged();
       Navigator.pop(context);
@@ -51,7 +52,10 @@ class ShopDashboardScreen extends StatelessWidget {
         ),
         title: Text(
           shop['name'] ?? 'Shop Dashboard',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -86,17 +90,28 @@ class ShopDashboardScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Icon(Icons.storefront_rounded, color: Colors.white, size: 40),
+                        const Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                         if (isActive)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white24,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
                               'CURRENT ACTIVE',
-                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                       ],
@@ -104,20 +119,28 @@ class ShopDashboardScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     Text(
                       shop['name'] ?? '',
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    if (shop['address'] != null && shop['address'].isNotEmpty) ...[
+                    if (shop['address'] != null &&
+                        shop['address'].isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         shop['address'],
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
               const SizedBox(height: 30),
-              
+
               if (!isActive) ...[
                 PrimaryButton(
                   text: 'Set as Active Shop',
@@ -128,10 +151,14 @@ class ShopDashboardScreen extends StatelessWidget {
 
               const Text(
                 'Management',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 16),
-              
+
               _buildMenuCard(
                 children: [
                   _buildMenuItem(
@@ -140,7 +167,13 @@ class ShopDashboardScreen extends StatelessWidget {
                     title: 'Employees',
                     subtitle: 'Manage staff for this shop',
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ManageEmployeesScreen(shopId: shop['_id'])));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ManageEmployeesScreen(shopId: shop['_id']),
+                        ),
+                      );
                     },
                   ),
                   _divider(),
@@ -151,7 +184,10 @@ class ShopDashboardScreen extends StatelessWidget {
                     subtitle: 'View sales and performance',
                     onTap: () {
                       // Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopReportsScreen()));
-                      floatingSnackBar(message: 'Coming soon', context: context);
+                      showTopSnackBar(
+                        Overlay.of(context),
+                        const CustomSnackBar.info(message: 'Coming soon'),
+                      );
                     },
                   ),
                   _divider(),
@@ -161,7 +197,10 @@ class ShopDashboardScreen extends StatelessWidget {
                     title: 'Shop Settings',
                     subtitle: 'Edit details and preferences',
                     onTap: () {
-                      floatingSnackBar(message: 'Coming soon', context: context);
+                      showTopSnackBar(
+                        Overlay.of(context),
+                        const CustomSnackBar.info(message: 'Coming soon'),
+                      );
                     },
                   ),
                 ],
@@ -237,7 +276,11 @@ class ShopDashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey.shade400,
+            ),
           ],
         ),
       ),

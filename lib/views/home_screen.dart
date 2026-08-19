@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _checkBackupAndShop() async {
     final box = HiveBoxes.getSettingsBox();
     final storageType = box.get('storageType', defaultValue: 'Device Storage');
-    
+
     if (storageType == 'Device Storage') {
       final userId = box.get('user_id') ?? '';
       if (userId.isNotEmpty) {
@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     }
-    
+
     _checkShop();
   }
 
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final box = HiveBoxes.getSettingsBox();
     final shopId = box.get('shop_id');
     final userRole = box.get('user_role', defaultValue: 'Owner');
-    
+
     if (shopId == null && userRole == 'Owner') {
       await Navigator.of(context).push(
         MaterialPageRoute(

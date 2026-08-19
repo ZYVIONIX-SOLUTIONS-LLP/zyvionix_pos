@@ -79,7 +79,8 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateEmployeeScreen(initialShopId: widget.shopId),
+              builder: (context) =>
+                  CreateEmployeeScreen(initialShopId: widget.shopId),
             ),
           );
           if (result == true) {
@@ -89,7 +90,10 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
         },
         backgroundColor: const Color(0xFF1EA1F2),
         icon: const Icon(Icons.person_add, color: Colors.white),
-        label: const Text('Add Employee', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Add Employee',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -138,7 +142,10 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
                 backgroundColor: const Color(0xFF1EA1F2).withOpacity(0.1),
                 child: Text(
                   (emp['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
-                  style: const TextStyle(color: Color(0xFF1EA1F2), fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Color(0xFF1EA1F2),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -148,12 +155,18 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
                   children: [
                     Text(
                       emp['name'] ?? 'Unknown',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${emp['role']} • ${emp['mobileNumber']}',
-                      style: const TextStyle(color: Colors.black54, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -161,7 +174,9 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                  color: isActive
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

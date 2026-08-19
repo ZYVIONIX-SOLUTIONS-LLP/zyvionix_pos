@@ -7,7 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -297,12 +298,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     context.read<ProductController>().init();
                                     context.read<BillController>().init();
                                     
-                                    floatingSnackBar(
-                                      message: 'LoggedIn successfull',
-                                      context: context,
-                                      textColor: Colors.white,
-                                      backgroundColor: Colors.green,
-                                      duration: const Duration(seconds: 2),
+                                    showTopSnackBar(
+                                      Overlay.of(context),
+                                      const CustomSnackBar.success(
+                                        message: 'LoggedIn successfully',
+                                      ),
+                                      displayDuration: const Duration(seconds: 2),
                                     );
 
                                     if (result['role'] == 'Employee') {

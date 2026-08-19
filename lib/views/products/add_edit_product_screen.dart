@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/product_controller.dart';
@@ -92,12 +93,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       message = "Product updated successfully!";
     }
 
-    floatingSnackBar(
-      message: message,
-      context: context,
-      textColor: Colors.white,
-      backgroundColor: Colors.green,
-      duration: const Duration(seconds: 2),
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.success(
+        message: message,
+      ),
+      displayDuration: const Duration(seconds: 2),
     );
 
     Future.delayed(const Duration(milliseconds: 600), () {

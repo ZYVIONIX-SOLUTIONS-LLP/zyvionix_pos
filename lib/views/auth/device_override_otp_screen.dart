@@ -8,7 +8,8 @@ import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
 
 class DeviceOverrideOtpScreen extends StatefulWidget {
@@ -44,30 +45,30 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         if (mounted) {
-          floatingSnackBar(
-            message: data['message'] ?? 'OTP sent successfully',
-            context: context,
-            textColor: Colors.white,
-            backgroundColor: Colors.green,
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(
+              message: data['message'] ?? 'OTP sent successfully',
+            ),
           );
         }
       } else {
         if (mounted) {
-          floatingSnackBar(
-            message: data['message'] ?? 'Failed to send OTP',
-            context: context,
-            textColor: Colors.white,
-            backgroundColor: Colors.red,
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.error(
+              message: data['message'] ?? 'Failed to send OTP',
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        floatingSnackBar(
-          message: 'Network error',
-          context: context,
-          textColor: Colors.white,
-          backgroundColor: Colors.red,
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: 'Network error',
+          ),
         );
       }
     } finally {
@@ -104,11 +105,11 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
 
   Future<void> _verifyOtp() async {
     if (_otpController.text.trim().isEmpty) {
-      floatingSnackBar(
-        message: 'Please enter the OTP',
-        context: context,
-        textColor: Colors.white,
-        backgroundColor: Colors.red,
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message: 'Please enter the OTP',
+        ),
       );
       return;
     }
@@ -152,11 +153,11 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
           context.read<ProductController>().init();
           context.read<BillController>().init();
           
-          floatingSnackBar(
-            message: 'Device overridden and logged in successfully',
-            context: context,
-            textColor: Colors.white,
-            backgroundColor: Colors.green,
+          showTopSnackBar(
+            Overlay.of(context),
+            const CustomSnackBar.success(
+              message: 'Device overridden and logged in successfully',
+            ),
           );
 
           Navigator.pushAndRemoveUntil(
@@ -167,21 +168,21 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
         }
       } else {
         if (mounted) {
-          floatingSnackBar(
-            message: data['message'] ?? 'Invalid OTP',
-            context: context,
-            textColor: Colors.white,
-            backgroundColor: Colors.red,
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.error(
+              message: data['message'] ?? 'Invalid OTP',
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        floatingSnackBar(
-          message: 'Network error',
-          context: context,
-          textColor: Colors.white,
-          backgroundColor: Colors.red,
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: 'Network error',
+          ),
         );
       }
     } finally {

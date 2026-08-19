@@ -12,7 +12,6 @@ import 'package:zyvionix_pos/views/settings/active_plan_screen.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
 import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'package:zyvionix_pos/views/shops/manage_shops_screen.dart';
-import 'package:zyvionix_pos/widgets/subscription_modal.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/views/settings/upgrade_plan_screen.dart';
@@ -22,7 +21,8 @@ import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Uri.parse('${ApiConstants.baseUrl}/shops'),
         headers: {'Authorization': 'Bearer $token'},
       );
-      
+
       Navigator.pop(context); // close loading
 
       if (response.statusCode == 200) {
@@ -101,14 +101,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         await box.put('current_shop_id', value);
                         await box.put('shop_name', shop['name']);
                         await box.put('shop_id', value);
-                        await box.put('offline_company_address', shop['address'] ?? '');
+                        await box.put(
+                          'offline_company_address',
+                          shop['address'] ?? '',
+                        );
                         await box.put('shop_mobile', shop['mobile'] ?? '');
                         if (mounted) {
-                           context.read<ProductController>().init();
-                           context.read<BillController>().init();
-                           setState(() {});
-                           Navigator.pop(ctx);
-                           floatingSnackBar(message: 'Switched to ${shop['name']}', context: context);
+                          context.read<ProductController>().init();
+                          context.read<BillController>().init();
+                          setState(() {});
+                          Navigator.pop(ctx);
+                          showTopSnackBar(
+                            Overlay.of(context),
+                            CustomSnackBar.info(
+                              message: 'Switched to ${shop['name']}',
+                            ),
+                          );
                         }
                       },
                     );
@@ -126,13 +134,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       } else {
         if (mounted) {
-           floatingSnackBar(message: 'Failed to fetch shops', context: context, backgroundColor: Colors.red, textColor: Colors.white);
+          showTopSnackBar(
+            Overlay.of(context),
+            const CustomSnackBar.error(message: 'Failed to fetch shops'),
+          );
         }
       }
     } catch (e) {
       Navigator.pop(context); // close loading
       if (mounted) {
-         floatingSnackBar(message: 'Network error', context: context, backgroundColor: Colors.red, textColor: Colors.white);
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(message: 'Network error'),
+        );
       }
     }
   }
@@ -226,7 +240,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ],
-                    if (storageType == 'Cloud Storage' && box.get('user_role') == 'Owner') ...[
+                    if (storageType == 'Cloud Storage' &&
+                        box.get('user_role') == 'Owner') ...[
                       _divider(),
                       _buildMenuItem(
                         icon: Icons.storefront_rounded,
@@ -558,12 +573,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               context.read<BillController>().clear();
               await context.read<AuthProvider>().logout();
               if (context.mounted) {
-                floatingSnackBar(
-                  message: 'Loggedout successfully',
-                  context: context,
-                  textColor: Colors.white,
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 2),
+                showTopSnackBar(
+                  Overlay.of(context),
+                  const CustomSnackBar.success(
+                    backgroundColor: Colors.red,
+                    message: 'Logged out successfully',
+                  ),
+                  displayDuration: const Duration(seconds: 2),
                 );
 
                 Navigator.pushAndRemoveUntil(

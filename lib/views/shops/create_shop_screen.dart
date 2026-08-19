@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/models/shop.dart';
-import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
@@ -19,7 +17,7 @@ class CreateShopScreen extends StatefulWidget {
 
 class _CreateShopScreenState extends State<CreateShopScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _mobileController = TextEditingController();
@@ -76,14 +74,17 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
       // We should also have a box for shops, but for local storage 1 shop is enough.
       // We will serialize it directly to settings for now to keep it simple, or use a Shops box.
       // Assuming a single shop for offline.
-      
+
       setState(() {
         _isLoading = false;
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Shop created locally!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Shop created locally!'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context, true);
       }
@@ -109,11 +110,14 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
         if (response.statusCode == 201) {
           final data = jsonDecode(response.body);
           final newShopId = data['shop']['_id'];
-          
+
           await box.put('current_shop_id', newShopId);
           await box.put('shop_id', newShopId);
           await box.put('shop_name', shopName);
-          await box.put('offline_company_address', _addressController.text.trim());
+          await box.put(
+            'offline_company_address',
+            _addressController.text.trim(),
+          );
           await box.put('shop_mobile', _mobileController.text.trim());
 
           setState(() {
@@ -121,8 +125,11 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           });
 
           if (mounted) {
-             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Shop created on Cloud!'), backgroundColor: Colors.green),
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Shop created on Cloud!'),
+                backgroundColor: Colors.green,
+              ),
             );
             Navigator.pop(context, true);
           }
@@ -133,7 +140,10 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           });
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(data['message'] ?? 'Failed to create shop'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(data['message'] ?? 'Failed to create shop'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
@@ -142,8 +152,11 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           _isLoading = false;
         });
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Network error.'), backgroundColor: Colors.red),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Network error.'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -172,7 +185,9 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           if (!isOptional && (value == null || value.trim().isEmpty)) {
             return 'Please enter $label';
           }
-          if (value != null && value.isNotEmpty && keyboardType == TextInputType.phone) {
+          if (value != null &&
+              value.isNotEmpty &&
+              keyboardType == TextInputType.phone) {
             if (value.length != 10) {
               return 'Please enter a valid 10-digit number';
             }
@@ -198,12 +213,12 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: widget.isForced 
-            ? const SizedBox() 
-            : IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios_new),
-              ),
+          leading: widget.isForced
+              ? const SizedBox()
+              : IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back_ios_new),
+                ),
           title: const Text('Create Shop'),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -220,7 +235,10 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                   if (widget.isForced) ...[
                     const Text(
                       'Welcome! Let\'s set up your first shop.',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
@@ -270,7 +288,10 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                       ),
                       child: const Text(
                         'Save Shop',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                 ],

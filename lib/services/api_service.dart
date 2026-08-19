@@ -17,7 +17,7 @@ class ApiService {
         final data = jsonDecode(response.body);
         if (data['code'] == 'DEVICE_LOGGED_OUT') {
           AuthProvider().logout();
-          
+
           if (navigatorKey.currentState != null) {
             showDialog(
               context: navigatorKey.currentState!.context,
@@ -30,12 +30,14 @@ class ApiService {
                     onPressed: () {
                       Navigator.pop(ctx);
                       navigatorKey.currentState!.pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
                         (route) => false,
                       );
                     },
                     child: const Text('OK'),
-                  )
+                  ),
                 ],
               ),
             );
@@ -61,11 +63,10 @@ class ApiService {
       final headers = await _getHeaders();
       final box = HiveBoxes.getSettingsBox();
       final shopId = box.get('shop_id');
-      final url = shopId != null ? '${ApiConstants.productsUrl}?shopId=$shopId' : ApiConstants.productsUrl;
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final url = shopId != null
+          ? '${ApiConstants.productsUrl}?shopId=$shopId'
+          : ApiConstants.productsUrl;
+      final response = await http.get(Uri.parse(url), headers: headers);
 
       _checkDeviceLock(response);
 
@@ -176,11 +177,10 @@ class ApiService {
       final headers = await _getHeaders();
       final box = HiveBoxes.getSettingsBox();
       final shopId = box.get('shop_id');
-      final url = shopId != null ? '${ApiConstants.billsUrl}?shopId=$shopId' : ApiConstants.billsUrl;
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final url = shopId != null
+          ? '${ApiConstants.billsUrl}?shopId=$shopId'
+          : ApiConstants.billsUrl;
+      final response = await http.get(Uri.parse(url), headers: headers);
       _checkDeviceLock(response);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -230,7 +230,7 @@ class ApiService {
       final headers = await _getHeaders();
       final box = HiveBoxes.getSettingsBox();
       final shopId = box.get('shop_id');
-      
+
       final body = {
         'id': bill.id,
         'billNumber': bill.billNumber,
@@ -254,7 +254,7 @@ class ApiService {
         'customerPhone': bill.customerPhone ?? '',
         'timestamp': bill.timestamp.toIso8601String(),
       };
-      
+
       if (shopId != null) body['shopId'] = shopId;
 
       final response = await http.post(
