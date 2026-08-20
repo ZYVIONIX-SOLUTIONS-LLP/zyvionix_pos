@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "974204062237",
+    "project_id": "zyvionix-pos",
+    "storage_bucket": "zyvionix-pos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:974204062237:android:088325b0bb614e8dc214f4",
+        "android_client_info": {
+          "package_name": "com.zyvionix.billingapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "974204062237-ed1ci6tnj3gousfus9v3ji3aph031o0o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zyvionix.billingapp",
+            "certificate_hash": "d8fe1b0cc741deddc65c679326af3015bc19e225"
+          }
+        },
+        {
+          "client_id": "974204062237-n25q56plv5e0vu67vsmihuobvs6fcqst.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zyvionix.billingapp",
+            "certificate_hash": "b3bd84abeccd4c188c71362ca3ac2a8dc8493331"
+          }
+        },
+        {
+          "client_id": "974204062237-5ga06qnk5ph8o3g7oikjis7je3cn9nbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnUsQHdVBHHySfe1Juk_zh6y19KUNI41o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "974204062237-5ga06qnk5ph8o3g7oikjis7je3cn9nbk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
