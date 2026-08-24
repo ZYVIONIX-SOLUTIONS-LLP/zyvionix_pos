@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
 import 'package:zyvionix_pos/views/shops/shop_dashboard_screen.dart';
 import 'package:floating_snackbar/floating_snackbar.dart';
+import 'package:zyvionix_pos/services/api_service.dart';
 
 class ManageShopsScreen extends StatefulWidget {
   const ManageShopsScreen({super.key});
@@ -18,17 +19,51 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
   bool _isLoading = true;
   List<dynamic> _shops = [];
   String _currentShopId = '';
+  bool _hasSubscription = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchShops();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final profile = await ApiService.getProfile();
+    if (profile != null && profile['currentPlan'] != null) {
+      _hasSubscription = true;
+    } else {
+      _hasSubscription = false;
+    }
+    await _fetchShops();
   }
 
   Future<void> _fetchShops() async {
     final box = HiveBoxes.getSettingsBox();
     final token = box.get('auth_token');
     _currentShopId = box.get('current_shop_id', defaultValue: '');
+    final storageType = box.get('storageType', defaultValue: 'Device Storage');
+
+    if (storageType == 'Device Storage' || storageType == 'device') {
+      final localShopId = box.get('shop_id');
+      if (localShopId != null) {
+        setState(() {
+          _shops = [
+            {
+              '_id': localShopId,
+              'name': box.get('shop_name', defaultValue: 'My Shop'),
+              'address': box.get('offline_company_address', defaultValue: ''),
+            }
+          ];
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _shops = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
 
     if (token == null) {
       setState(() => _isLoading = false);
@@ -79,7 +114,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _buildContent(),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _hasSubscription ? FloatingActionButton.extended(
         onPressed: () async {
           final result = await Navigator.push(
             context,
@@ -95,7 +130,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
         backgroundColor: const Color(0xFF1EA1F2),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Shop', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
+      ) : null,
     );
   }
 

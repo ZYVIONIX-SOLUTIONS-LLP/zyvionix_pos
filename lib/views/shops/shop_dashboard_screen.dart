@@ -7,8 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:zyvionix_pos/views/employees/manage_employees_screen.dart';
+import 'package:zyvionix_pos/views/shops/edit_shop_screen.dart';
 
-class ShopDashboardScreen extends StatelessWidget {
+class ShopDashboardScreen extends StatefulWidget {
   final dynamic shop;
   final bool isActive;
   final VoidCallback onStatusChanged;
@@ -20,11 +21,24 @@ class ShopDashboardScreen extends StatelessWidget {
     required this.onStatusChanged,
   });
 
+  @override
+  State<ShopDashboardScreen> createState() => _ShopDashboardScreenState();
+}
+
+class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
+  late dynamic _shop;
+
+  @override
+  void initState() {
+    super.initState();
+    _shop = widget.shop;
+  }
+
   Future<void> _setActiveShop(BuildContext context) async {
     final box = HiveBoxes.getSettingsBox();
-    await box.put('shop_id', shop['_id']);
-    await box.put('shop_name', shop['name']);
-    await box.put('current_shop_id', shop['_id']);
+    await box.put('shop_id', _shop['_id']);
+    await box.put('shop_name', _shop['name']);
+    await box.put('current_shop_id', _shop['_id']);
 
     if (context.mounted) {
       context.read<ProductController>().init();
@@ -36,7 +50,7 @@ class ShopDashboardScreen extends StatelessWidget {
           message: 'Active shop changed successfully',
         ),
       );
-      onStatusChanged();
+      widget.onStatusChanged();
       Navigator.pop(context);
     }
   }
@@ -51,7 +65,7 @@ class ShopDashboardScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios),
         ),
         title: Text(
-          shop['name'] ?? 'Shop Dashboard',
+          _shop['name'] ?? 'Shop Dashboard',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.black87,
@@ -95,53 +109,156 @@ class ShopDashboardScreen extends StatelessWidget {
                           color: Colors.white,
                           size: 40,
                         ),
-                        if (isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                        Row(
+                          children: [
+                                if (widget.isActive)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white24,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      'CURRENT ACTIVE',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.white),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => EditShopScreen(shop: _shop),
+                                      ),
+                                    );
+                                    if (result != null) {
+                                      if (result is Map) {
+                                        setState(() {
+                                          _shop = result;
+                                        });
+                                      }
+                                      widget.onStatusChanged();
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'CURRENT ACTIVE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      shop['name'] ?? '',
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          _shop['name'] ?? '',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (shop['address'] != null &&
-                        shop['address'].isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        shop['address'],
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                        if (_shop['address'] != null &&
+                            _shop['address'].isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.white70, size: 16),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _shop['address'],
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (_shop['mobile'] != null &&
+                            _shop['mobile'].isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.phone, color: Colors.white70, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                _shop['mobile'],
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (_shop['email'] != null &&
+                            _shop['email'].isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.email, color: Colors.white70, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                _shop['email'],
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (_shop['gst'] != null &&
+                            _shop['gst'].isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.receipt_long, color: Colors.white70, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'GST: ${_shop['gst']}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (_shop['status'] != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _shop['status'] == 'Active' ? Colors.green.withOpacity(0.8) : Colors.red.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _shop['status'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                   ],
                 ),
               ),
               const SizedBox(height: 30),
 
-              if (!isActive) ...[
+              if (!widget.isActive) ...[
                 PrimaryButton(
                   text: 'Set as Active Shop',
                   onPressed: () => _setActiveShop(context),
@@ -167,11 +284,26 @@ class ShopDashboardScreen extends StatelessWidget {
                     title: 'Employees',
                     subtitle: 'Manage staff for this shop',
                     onTap: () {
+                      final storageType = HiveBoxes.getSettingsBox().get(
+                        'storageType',
+                        defaultValue: 'Device Storage',
+                      );
+                      if (storageType == 'Device Storage' ||
+                          storageType == 'device') {
+                        showTopSnackBar(
+                          Overlay.of(context),
+                          const CustomSnackBar.info(
+                            message:
+                                'Employee management is only available in Cloud Storage',
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ManageEmployeesScreen(shopId: shop['_id']),
+                              ManageEmployeesScreen(shopId: _shop['_id']),
                         ),
                       );
                     },

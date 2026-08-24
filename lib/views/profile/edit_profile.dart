@@ -28,6 +28,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Future<void> _fetchProfile() async {
+    print('gtgtgggggggggggggggggggggggggggggggggggggggggggggg');
     final profile = await ApiService.getProfile();
     if (profile != null) {
       setState(() {
@@ -74,9 +75,10 @@ class _EditProfileState extends State<EditProfile> {
       await _box.put('offline_mobile', _phoneController.text.trim());
       await _box.put('user_email', _emailController.text.trim());
       await _box.put('user_phone', _phoneController.text.trim());
-      
+
       if (storageType == 'Device Storage') {
-        success = true; // In device storage, we consider local update a success even if API fails (offline)
+        success =
+            true; // In device storage, we consider local update a success even if API fails (offline)
       }
     }
 

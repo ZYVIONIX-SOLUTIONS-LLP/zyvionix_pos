@@ -276,8 +276,16 @@ class ApiService {
       final uri = Uri.parse(
         ApiConstants.productsUrl,
       ).replace(path: '/api/auth/profile');
+      print('uriiiiiiiiiiiiiiiiiiiiiii $uri');
       final response = await http.get(uri, headers: headers);
       _checkDeviceLock(response);
+
+      print(
+        'Response status code for get profile apiiiiiiiiiii ${response.statusCode}',
+      );
+      print(
+        'Response  bodyyyyyyyyyyyyyyyyyyy for get profile apiiiiiiiiiii ${response.body}',
+      );
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }

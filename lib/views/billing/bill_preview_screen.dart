@@ -419,9 +419,16 @@ class ThermalReceiptCard extends StatelessWidget {
                 Builder(
                   builder: (context) {
                     final box = HiveBoxes.getSettingsBox();
-                    String companyName = box.get('shop_name', defaultValue: 'ZYVIONIX POS');
-                    String address = box.get('offline_company_address', defaultValue: '');
-                    String rawPhone = box.get('shop_mobile') ?? box.get('user_phone') ?? '';
+                    String companyName = box.get(
+                      'shop_name',
+                      defaultValue: 'ZYVIONIX POS',
+                    );
+                    String address = box.get(
+                      'offline_company_address',
+                      defaultValue: '',
+                    );
+                    String rawPhone =
+                        box.get('shop_mobile') ?? box.get('user_phone') ?? '';
                     String phone = rawPhone.isNotEmpty ? 'Ph: $rawPhone' : '';
 
                     return Column(

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -12,11 +13,46 @@ import 'controllers/bill_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'views/splash_screen.dart';
 import 'services/backup_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'views/firebase/firebase_service.dart';
+import 'views/firebase/local_notification_service.dart';
+import 'services/maintenance_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+@pragma('vm:entry-point')
+Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+
+  print('🔔 Background message received!');
+  print('📌 Message ID: ${message.messageId}');
+  print('📦 Data payload: ${message.data}');
+  print('🕐 Sent time: ${message.sentTime}');
+
+  if (message.notification != null) {
+    print('📣 Title: ${message.notification!.title}');
+    print('📣 Body: ${message.notification!.body}');
+  } else {
+    print('⚠️ Data-only message');
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+    await LocalNotificationService.init();
+    await FCMService().initialize();
+
+    print('✅ Firebase & FCM initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
+
   await Hive.initFlutter();
   await HiveBoxes.initHiveAndOpenBoxes();
 
@@ -41,7 +77,8 @@ class ZyvionixPosApp extends StatefulWidget {
   State<ZyvionixPosApp> createState() => _ZyvionixPosAppState();
 }
 
-class _ZyvionixPosAppState extends State<ZyvionixPosApp> with WidgetsBindingObserver {
+class _ZyvionixPosAppState extends State<ZyvionixPosApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -56,9 +93,13 @@ class _ZyvionixPosAppState extends State<ZyvionixPosApp> with WidgetsBindingObse
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       final box = HiveBoxes.getSettingsBox();
-      final storageType = box.get('storageType', defaultValue: 'Device Storage');
+      final storageType = box.get(
+        'storageType',
+        defaultValue: 'Device Storage',
+      );
       if (storageType == 'Device Storage') {
         final userId = box.get('user_id') ?? '';
         if (userId.isNotEmpty) {
@@ -103,11 +144,14 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
   }
 
   Future<void> _initApp() async {
+    MaintenanceService().initSocket();
+    await MaintenanceService().checkInitialMaintenanceStatus();
+
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       final box = HiveBoxes.getSettingsBox();
       final token = box.get('auth_token');
-      
+
       if (token != null && token.isNotEmpty) {
         final userId = box.get('user_id');
         if (userId != null) {
@@ -118,10 +162,12 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
           context.read<BillController>().init();
         }
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const NavbarScreen()));
+          MaterialPageRoute(builder: (_) => const NavbarScreen()),
+        );
       } else {
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const LoginScreen()));
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
       }
     }
   }

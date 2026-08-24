@@ -240,8 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ],
-                    if (storageType == 'Cloud Storage' &&
-                        box.get('user_role') == 'Owner') ...[
+                    if (box.get('user_role') == 'Owner') ...[
                       _divider(),
                       _buildMenuItem(
                         icon: Icons.storefront_rounded,
