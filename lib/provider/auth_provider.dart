@@ -388,7 +388,7 @@ class AuthProvider extends ChangeNotifier {
     return {
       'deviceId': deviceId,
       'deviceName': deviceName,
-      'deviceversion': deviceVersion,
+      'deviceVersion': deviceVersion,
       'androidAppVersion': androidAppVersion,
       'iosAppVersion': iosAppVersion,
     };

@@ -269,6 +269,64 @@ class ApiService {
     }
   }
 
+  static Future<bool> updateBill(Bill bill) async {
+    try {
+      final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+
+      final body = {
+        'id': bill.id,
+        'billNumber': bill.billNumber,
+        'date': bill.date.toIso8601String(),
+        'items': bill.items
+            .map(
+              (item) => {
+                'productId': item.product.id,
+                'name': item.product.name,
+                'price': item.price,
+                'quantity': item.quantity,
+                'total': item.total,
+              },
+            )
+            .toList(),
+        'subTotal': bill.subTotal,
+        'tax': bill.tax,
+        'grandTotal': bill.grandTotal,
+        'paymentMethod': bill.paymentMethod,
+        'companyName': bill.companyName ?? '',
+        'customerPhone': bill.customerPhone ?? '',
+        'timestamp': bill.timestamp.toIso8601String(),
+      };
+
+      if (shopId != null) body['shopId'] = shopId;
+
+      final response = await http.put(
+        Uri.parse('${ApiConstants.billsUrl}/${bill.id}'),
+        headers: headers,
+        body: jsonEncode(body),
+      );
+      _checkDeviceLock(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteBill(String id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.billsUrl}/$id'),
+        headers: headers,
+      );
+      _checkDeviceLock(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // --- Profile ---
   static Future<Map<String, dynamic>?> getProfile() async {
     try {
@@ -397,4 +455,25 @@ class ApiService {
   //     };
   //   }
   // }
+
+  static Future<Map<String, dynamic>?> getAnalytics() async {
+    try {
+      final headers = await _getHeaders();
+      final box = HiveBoxes.getSettingsBox();
+      final shopId = box.get('shop_id');
+      final url = shopId != null
+          ? '${ApiConstants.analyticsUrl}?shopId=$shopId'
+          : ApiConstants.analyticsUrl;
+          
+      final response = await http.get(Uri.parse(url), headers: headers);
+      _checkDeviceLock(response);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print("Error fetching analytics: $e");
+    }
+    return null;
+  }
 }

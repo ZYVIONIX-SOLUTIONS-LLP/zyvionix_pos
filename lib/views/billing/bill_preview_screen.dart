@@ -159,6 +159,9 @@ import '../../services/printer_service.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import '../../services/api_service.dart';
 import '../../database/hive_boxes.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/bill_controller.dart';
+import 'cart_screen.dart';
 
 class BillPreviewScreen extends StatefulWidget {
   final Bill bill;
@@ -355,23 +358,153 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
           ),
         ],
       ),
-      body: _showFullPdf
-          ? PdfPreview(
-              build: (format) => PdfService.generateReceipt(widget.bill),
-              canChangeOrientation: false,
-              canChangePageFormat: false,
-              canDebug: false,
-              initialPageFormat: PdfPageFormat.roll80,
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: RepaintBoundary(
-                  key: _receiptKey,
-                  child: ThermalReceiptCard(bill: widget.bill),
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Payment Method:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
+                DropdownButton<String>(
+                  value: widget.bill.paymentMethod.isNotEmpty
+                      ? widget.bill.paymentMethod
+                      : 'Cash',
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.arrow_drop_down, color: Colors.black87),
+                  items: {
+                    'Cash',
+                    'Google Pay',
+                    'Card',
+                    'UPI',
+                    'Other',
+                    if (widget.bill.paymentMethod.isNotEmpty)
+                      widget.bill.paymentMethod,
+                  }.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(
+                        value,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) async {
+                    if (newValue != null) {
+                      setState(() {
+                        widget.bill.paymentMethod = newValue;
+                      });
+                      if (widget.bill.isInBox) {
+                        await widget.bill.save();
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _showFullPdf
+                ? PdfPreview(
+                    build: (format) => PdfService.generateReceipt(widget.bill),
+                    canChangeOrientation: false,
+                    canChangePageFormat: false,
+                    canDebug: false,
+                    initialPageFormat: PdfPageFormat.roll80,
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: RepaintBoundary(
+                        key: _receiptKey,
+                        child: ThermalReceiptCard(bill: widget.bill),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit Bill'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: Colors.blue.shade700,
+                  side: BorderSide(color: Colors.blue.shade700),
+                ),
+                onPressed: () {
+                  final controller = Provider.of<BillController>(context, listen: false);
+                  controller.loadBillForEditing(widget.bill);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CartScreen()),
+                  );
+                },
               ),
             ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.delete),
+                label: const Text('Delete'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Bill?'),
+                      content: const Text('Are you sure you want to delete this bill? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    final controller = Provider.of<BillController>(context, listen: false);
+                    final success = await controller.deleteBill(widget.bill);
+                    if (success) {
+                      if (context.mounted) {
+                        Navigator.pop(context); // Go back to history or home
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Bill deleted successfully')),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to delete bill')),
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

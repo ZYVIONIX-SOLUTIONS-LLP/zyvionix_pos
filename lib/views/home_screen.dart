@@ -768,7 +768,7 @@ class _HomeScreenState extends State<HomeScreen> {
         bills.sort((a, b) => b.date.compareTo(a.date));
 
         // Take top 10 recent bills
-        final recentBills = bills.take(10).toList();
+        final recentBills = bills.take(5).toList();
 
         return Container(
           decoration: BoxDecoration(

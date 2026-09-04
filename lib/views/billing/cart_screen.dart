@@ -13,9 +13,13 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
+            final billController = Provider.of<BillController>(context, listen: false);
+            if (billController.editingBill != null) {
+              billController.clearCart();
+            }
             Navigator.of(context).pop();
           },
-          icon: Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios),
         ),
         title: const Text(
           'Your Cart',
@@ -283,10 +287,12 @@ class CartScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.print_outlined, color: Colors.white),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'PAY / PRINT BILL',
-                          style: TextStyle(
+                          controller.editingBill != null
+                              ? 'UPDATE / PRINT BILL'
+                              : 'PAY / PRINT BILL',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,

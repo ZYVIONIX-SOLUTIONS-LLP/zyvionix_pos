@@ -14,6 +14,7 @@ class BillHistoryScreen extends StatefulWidget {
 
 class _BillHistoryScreenState extends State<BillHistoryScreen> {
   String _searchQuery = '';
+  String _selectedFilter = 'All Time';
 
   @override
   Widget build(BuildContext context) {
@@ -23,16 +24,51 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search by Bill No or Customer',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search by Bill No or Customer',
+                      prefixIcon: Icon(Icons.search),
+                      isDense: true,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedFilter,
+                      icon: const Icon(Icons.filter_list, size: 20),
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      items: ['All Time', 'This Month', 'Last Month', 'This Year']
+                          .map((String value) => DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              ))
+                          .toList(),
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedFilter = newValue;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -47,6 +83,16 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                 }
 
                 var bills = List.from(controller.bills);
+
+                final now = DateTime.now();
+                if (_selectedFilter == 'This Month') {
+                  bills = bills.where((b) => b.date.month == now.month && b.date.year == now.year).toList();
+                } else if (_selectedFilter == 'Last Month') {
+                  final lastMonth = DateTime(now.year, now.month - 1);
+                  bills = bills.where((b) => b.date.month == lastMonth.month && b.date.year == lastMonth.year).toList();
+                } else if (_selectedFilter == 'This Year') {
+                  bills = bills.where((b) => b.date.year == now.year).toList();
+                }
 
                 if (_searchQuery.isNotEmpty) {
                   bills = bills.where((b) {

@@ -18,11 +18,14 @@ class BillController extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Cart state
+  Bill? _editingBill;
   List<BillItem> _cart = [];
   double _tax = 0.0;
   String _paymentMethod = 'Cash';
   String? _companyName;
   String? _customerPhone;
+
+  Bill? get editingBill => _editingBill;
 
   List<BillItem> get cart => _cart;
   double get tax => _tax;
@@ -122,6 +125,7 @@ class BillController extends ChangeNotifier {
   }
 
   void clearCart() {
+    _editingBill = null;
     _cart.clear();
     _tax = 0.0;
     _paymentMethod = 'Cash';
@@ -130,20 +134,55 @@ class BillController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Bill> saveBill() async {
-    int billNumber = 1;
-    if (!_isCloud && _billsBox != null) {
-      billNumber = _billsBox!.length + 1;
+  void loadBillForEditing(Bill bill) {
+    _editingBill = bill;
+    _cart = List.from(bill.items.map((e) => BillItem(
+          product: e.product,
+          quantity: e.quantity,
+          price: e.price,
+          total: e.total,
+        )));
+    _tax = bill.tax;
+    _paymentMethod = bill.paymentMethod;
+    _companyName = bill.companyName;
+    _customerPhone = bill.customerPhone;
+    notifyListeners();
+  }
+
+  Future<bool> deleteBill(Bill bill) async {
+    bool success = true;
+    if (_isCloud) {
+      success = await ApiService.deleteBill(bill.id);
     } else {
-      billNumber = DateTime.now().millisecondsSinceEpoch % 100000;
+      if (_billsBox != null) {
+        await _billsBox!.delete(bill.id);
+        final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
+        await BackupService.backupData(userId);
+      }
+    }
+    if (success) {
+      _bills.removeWhere((b) => b.id == bill.id);
+      notifyListeners();
+    }
+    return success;
+  }
+
+  Future<Bill> saveBill() async {
+    int billNumber = _editingBill?.billNumber ?? 1;
+    if (_editingBill == null) {
+      if (!_isCloud && _billsBox != null) {
+        billNumber = _billsBox!.length + 1;
+      } else {
+        billNumber = DateTime.now().millisecondsSinceEpoch % 100000;
+      }
     }
 
     final now = DateTime.now();
 
     final newBill = Bill(
-      id: now.millisecondsSinceEpoch.toString(),
+      id: _editingBill?.id ?? now.millisecondsSinceEpoch.toString(),
       billNumber: billNumber,
-      date: now,
+      date: _editingBill?.date ?? now,
       items: List.from(_cart),
       subTotal: subTotal,
       tax: _tax,
@@ -151,11 +190,18 @@ class BillController extends ChangeNotifier {
       paymentMethod: _paymentMethod,
       companyName: _companyName,
       customerPhone: _customerPhone,
-      timestamp: now,
+      timestamp: _editingBill?.timestamp ?? now,
+      shopId: _editingBill?.shopId,
+      billedBy: _editingBill?.billedBy,
+      billedByType: _editingBill?.billedByType,
     );
 
     if (_isCloud) {
-      await ApiService.addBill(newBill);
+      if (_editingBill != null) {
+        await ApiService.updateBill(newBill);
+      } else {
+        await ApiService.addBill(newBill);
+      }
     } else {
       if (_billsBox != null) {
         await _billsBox!.put(newBill.id, newBill);
@@ -164,7 +210,14 @@ class BillController extends ChangeNotifier {
       }
     }
 
-    _bills.insert(0, newBill);
+    if (_editingBill != null) {
+      final index = _bills.indexWhere((b) => b.id == newBill.id);
+      if (index != -1) {
+        _bills[index] = newBill;
+      }
+    } else {
+      _bills.insert(0, newBill);
+    }
 
     clearCart();
     return newBill;

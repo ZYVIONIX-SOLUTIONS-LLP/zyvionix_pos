@@ -8,6 +8,7 @@ import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 // import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
+import 'package:zyvionix_pos/views/reports/report_analytics.dart';
 import 'package:zyvionix_pos/views/settings/active_plan_screen.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
 import 'package:zyvionix_pos/views/auth/login_screen.dart';
@@ -258,6 +259,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           });
                         },
                       ),
+
+                      _divider(),
+
+                      _buildMenuItem(
+                        icon: Icons.analytics_rounded,
+                        iconColor: Colors.purple,
+                        title: 'Reports & Analytics',
+                        subtitle: 'View sales reports and business insights',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ReportAnalytics(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // _buildMenuItem(
+                      //   icon: Icons.storefront_rounded,
+                      //   iconColor: Colors.deepOrange,
+                      //   title: 'Manage Shops',
+                      //   subtitle: 'View and manage your shops',
+                      //   onTap: () {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (context) => const ManageShopsScreen(),
+                      //       ),
+                      //     ).then((_) {
+                      //       _refreshProfile();
+                      //     });
+                      //   },
+                      // ),
                     ],
                   ],
                 ),

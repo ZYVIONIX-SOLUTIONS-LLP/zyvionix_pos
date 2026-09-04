@@ -71,10 +71,6 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
       await box.put('shop_email', _emailController.text.trim());
       await box.put('shop_gst', _gstController.text.trim());
 
-      // We should also have a box for shops, but for local storage 1 shop is enough.
-      // We will serialize it directly to settings for now to keep it simple, or use a Shops box.
-      // Assuming a single shop for offline.
-
       setState(() {
         _isLoading = false;
       });
