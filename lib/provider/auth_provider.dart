@@ -294,6 +294,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/views/firebase/firebase_service.dart';
+import 'package:zyvionix_pos/services/socket_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -508,6 +509,8 @@ class AuthProvider extends ChangeNotifier {
         }
 
         await HiveBoxes.openUserBoxes(userId);
+        
+        SocketService().initSocket();
 
         _setLoading(false);
 

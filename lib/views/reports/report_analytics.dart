@@ -159,7 +159,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                         const SizedBox(height: 20),
                         _buildOverviewCards(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Sales Trend (Last 30 Days)'),
+                        _buildSectionTitle('Sales Distribution (Weekly)'),
                         const SizedBox(height: 12),
                         _buildSalesChart(),
                         const SizedBox(height: 24),
@@ -353,17 +353,32 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
       return const SizedBox(height: 200, child: Center(child: Text('Not enough data')));
     }
 
-    double maxRevenue = 0;
-    for (var item in salesTrend) {
-      final rev = (item['revenue'] ?? 0).toDouble();
-      if (rev > maxRevenue) maxRevenue = rev;
+    double week1 = 0; // Oldest 7 days
+    double week2 = 0;
+    double week3 = 0;
+    double week4 = 0; // Newest 9 days
+
+    for (int i = 0; i < salesTrend.length; i++) {
+      final rev = (salesTrend[i]['revenue'] ?? 0).toDouble();
+      if (i < 7) week1 += rev;
+      else if (i < 14) week2 += rev;
+      else if (i < 21) week3 += rev;
+      else week4 += rev;
     }
 
-    if (maxRevenue == 0) maxRevenue = 100; // avoid division by zero
+    final values = [week4, week3, week2, week1];
+    final colors = [
+      const Color(0xFF3B82F6),
+      const Color(0xFF10B981),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEF4444),
+    ];
+    final labels = ['This Week', 'Last Week', '3 Weeks Ago', '4 Weeks Ago'];
+
+    final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
     return Container(
-      height: 240,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -375,64 +390,50 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
           )
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: salesTrend.map((item) {
-                final rev = (item['revenue'] ?? 0).toDouble();
-                final percentage = rev / maxRevenue;
-                final date = item['date'].toString();
-                final parsedDate = DateTime.tryParse(date) ?? DateTime.now();
-                final isToday = parsedDate.day == DateTime.now().day && parsedDate.month == DateTime.now().month;
-                
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                    child: Tooltip(
-                      message: '₹${rev.toStringAsFixed(0)} on ${DateFormat('MMM dd').format(parsedDate)}',
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOut,
-                                width: double.infinity,
-                                height: percentage == 0 ? 4 : percentage * 180,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isToday
-                                        ? [const Color(0xFFF59E0B), const Color(0xFFD97706)]
-                                        : [const Color(0xFF60A5FA), const Color(0xFF3B82F6)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+          SizedBox(
+            width: 120,
+            height: 120,
+            child: CustomPaint(
+              painter: PieChartPainter(values, colors),
             ),
           ),
-          const SizedBox(height: 12),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('30 Days Ago', style: TextStyle(fontSize: 10, color: Colors.grey)),
-              Text('Today', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-            ],
-          )
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: colors[index],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          labels[index],
+                          style: const TextStyle(fontSize: 13, color: Colors.black87),
+                        ),
+                      ),
+                      Text(
+                        currency.format(values[index]),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      )
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
         ],
       ),
     );
@@ -495,5 +496,35 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
         },
       ),
     );
+  }
+}
+
+class PieChartPainter extends CustomPainter {
+  final List<double> values;
+  final List<Color> colors;
+
+  PieChartPainter(this.values, this.colors);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double total = values.fold(0, (sum, item) => sum + item);
+    if (total == 0) return;
+
+    double startAngle = -pi / 2;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+
+    for (int i = 0; i < values.length; i++) {
+      final sweepAngle = (values[i] / total) * 2 * pi;
+      final paint = Paint()
+        ..color = colors[i % colors.length]
+        ..style = PaintingStyle.fill;
+      canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
+      startAngle += sweepAngle;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant PieChartPainter oldDelegate) {
+    return oldDelegate.values != values || oldDelegate.colors != colors;
   }
 }

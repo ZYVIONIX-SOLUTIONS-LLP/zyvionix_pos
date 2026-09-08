@@ -20,7 +20,7 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isFetchingShops = true;
   List<dynamic> _allShops = [];
@@ -64,7 +64,10 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedShopIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one shop'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Please select at least one shop'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -97,14 +100,20 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
       if (response.statusCode == 201) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Employee created successfully'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Employee created successfully'),
+              backgroundColor: Colors.green,
+            ),
           );
           Navigator.pop(context, true);
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Failed to create employee'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(data['message'] ?? 'Failed to create employee'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -112,7 +121,10 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Network error'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Network error'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -127,7 +139,10 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text('Add Employee', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        title: const Text(
+          'Add Employee',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
@@ -140,17 +155,23 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Employee Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Employee Details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 CustomTextField(
                   label: 'Full Name',
                   controller: _nameController,
+                  hint: 'Full Name',
                   prefixIcon: Icons.person_outline,
-                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Required' : null,
                 ),
                 CustomTextField(
                   label: 'Mobile Number',
                   controller: _mobileController,
+                  hint: 'Mobile',
                   prefixIcon: Icons.phone_android,
                   keyboardType: TextInputType.phone,
                   validator: (value) {
@@ -162,12 +183,22 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                 CustomTextField(
                   label: 'Password',
                   controller: _passwordController,
+                  hint: 'Password',
+
                   prefixIcon: Icons.lock_outline,
                   obscureText: true,
-                  validator: (value) => value == null || value.length < 6 ? 'Min 6 chars' : null,
+                  validator: (value) =>
+                      value == null || value.length < 6 ? 'Min 6 chars' : null,
                 ),
                 const SizedBox(height: 16),
-                const Text('Role', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black54)),
+                const Text(
+                  'Role',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -195,9 +226,15 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Assign to Shops', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Assign to Shops',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                const Text('Select which shops this employee can access.', style: TextStyle(color: Colors.black54)),
+                const Text(
+                  'Select which shops this employee can access.',
+                  style: TextStyle(color: Colors.black54),
+                ),
                 const SizedBox(height: 16),
                 _isFetchingShops
                     ? const Center(child: CircularProgressIndicator())
@@ -211,12 +248,18 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _allShops.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final shop = _allShops[index];
                             final shopId = shop['_id'];
                             return CheckboxListTile(
-                              title: Text(shop['name'] ?? 'Shop', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              title: Text(
+                                shop['name'] ?? 'Shop',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               subtitle: Text(shop['address'] ?? ''),
                               value: _selectedShopIds.contains(shopId),
                               activeColor: const Color(0xFF1EA1F2),

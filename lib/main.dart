@@ -17,6 +17,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'views/firebase/firebase_service.dart';
 import 'views/firebase/local_notification_service.dart';
 import 'services/maintenance_service.dart';
+import 'services/socket_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -157,6 +158,9 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
         if (userId != null) {
           await HiveBoxes.openUserBoxes(userId);
         }
+        
+        SocketService().initSocket();
+
         if (mounted) {
           context.read<ProductController>().init();
           context.read<BillController>().init();
