@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatelessWidget {
@@ -25,10 +26,7 @@ class PrimaryButton extends StatelessWidget {
             ? const SizedBox(
                 height: 24,
                 width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
+                child: SpinKitThreeBounce(color: Colors.white, size: 24.0),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,

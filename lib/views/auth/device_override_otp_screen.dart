@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -218,7 +219,7 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
             ),
             const SizedBox(height: 24),
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
                 : ElevatedButton(
                     onPressed: _verifyOtp,
                     style: ElevatedButton.styleFrom(

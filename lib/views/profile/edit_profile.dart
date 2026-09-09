@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
@@ -154,7 +155,7 @@ class _EditProfileState extends State<EditProfile> {
                     ? const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
+                          child: SpinKitThreeBounce(color: Colors.white, size: 20.0),
                         ),
                       )
                     : Column(

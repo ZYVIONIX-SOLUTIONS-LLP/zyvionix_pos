@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
@@ -270,7 +271,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                   ),
                   const SizedBox(height: 24),
                   if (_isLoading)
-                    const Center(child: CircularProgressIndicator())
+                    const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
                   else
                     ElevatedButton(
                       onPressed: _createShop,

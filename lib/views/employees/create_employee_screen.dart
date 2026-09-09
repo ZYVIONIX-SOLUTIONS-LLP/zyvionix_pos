@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
@@ -237,7 +238,7 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                 ),
                 const SizedBox(height: 16),
                 _isFetchingShops
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
                     : Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -278,7 +279,7 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                       ),
                 const SizedBox(height: 40),
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
                     : PrimaryButton(
                         text: 'Save Employee',
                         onPressed: _saveEmployee,

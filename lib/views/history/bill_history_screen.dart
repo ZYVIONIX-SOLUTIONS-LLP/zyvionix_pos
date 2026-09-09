@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -75,7 +76,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
             child: Consumer<BillController>(
               builder: (context, controller, child) {
                 if (controller.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
                 }
 
                 if (controller.bills.isEmpty) {

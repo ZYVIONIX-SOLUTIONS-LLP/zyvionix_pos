@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
@@ -111,7 +112,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
             : _buildContent(),
       ),
       floatingActionButton: _hasSubscription ? FloatingActionButton.extended(

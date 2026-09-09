@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
@@ -48,7 +49,7 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
             : _buildContent(),
       ),
     );

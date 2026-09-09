@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/views/auth/device_override_otp_screen.dart';
 import 'package:zyvionix_pos/views/auth/registration_screen.dart';
@@ -30,7 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Device Lock Active'),
-        content: Text(result['message'] ?? 'Already logged in on another device.'),
+        content: Text(
+          result['message'] ?? 'Already logged in on another device.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -43,13 +46,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => DeviceOverrideOtpScreen(
-                    mobileNumber: result['mobileNumber'] ?? _emailController.text.trim(),
+                    mobileNumber:
+                        result['mobileNumber'] ?? _emailController.text.trim(),
                   ),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1EA1F2)),
-            child: const Text('Continue with new device', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1EA1F2),
+            ),
+            child: const Text(
+              'Continue with new device',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -121,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Owner / Employee Toggle
                     Container(
                       decoration: BoxDecoration(
@@ -139,9 +148,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: !_isEmployeeLogin ? const Color(0xFF1EA1F2) : Colors.transparent,
+                                  color: !_isEmployeeLogin
+                                      ? const Color(0xFF1EA1F2)
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -149,7 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: !_isEmployeeLogin ? Colors.white : Colors.grey.shade600,
+                                    color: !_isEmployeeLogin
+                                        ? Colors.white
+                                        : Colors.grey.shade600,
                                   ),
                                 ),
                               ),
@@ -164,9 +179,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: _isEmployeeLogin ? const Color(0xFF1EA1F2) : Colors.transparent,
+                                  color: _isEmployeeLogin
+                                      ? const Color(0xFF1EA1F2)
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -174,7 +193,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: _isEmployeeLogin ? Colors.white : Colors.grey.shade600,
+                                    color: _isEmployeeLogin
+                                        ? Colors.white
+                                        : Colors.grey.shade600,
                                   ),
                                 ),
                               ),
@@ -188,15 +209,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Username / Email Field
                     TextFormField(
                       controller: _emailController,
-                      keyboardType: _isEmployeeLogin ? TextInputType.phone : TextInputType.emailAddress,
+                      keyboardType: _isEmployeeLogin
+                          ? TextInputType.phone
+                          : TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return _isEmployeeLogin ? 'Please enter mobile number' : 'Please enter username, email or mobile';
+                          return _isEmployeeLogin
+                              ? 'Please enter mobile number'
+                              : 'Please enter username, email or mobile';
                         }
-                        
+
                         if (_isEmployeeLogin) {
-                          if (value.length != 10 || !RegExp(r'^\d+$').hasMatch(value)) {
+                          if (value.length != 10 ||
+                              !RegExp(r'^\d+$').hasMatch(value)) {
                             return 'Mobile number must be exactly 10 digits';
                           }
                         } else {
@@ -214,8 +240,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                       decoration: InputDecoration(
-                        labelText: _isEmployeeLogin ? 'Mobile Number' : 'Username or Email',
-                        prefixIcon: Icon(_isEmployeeLogin ? Icons.phone_android : Icons.person_outline),
+                        labelText: _isEmployeeLogin
+                            ? 'Mobile Number'
+                            : 'Username or Email',
+                        prefixIcon: Icon(
+                          _isEmployeeLogin
+                              ? Icons.phone_android
+                              : Icons.person_outline,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -282,7 +314,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, _) {
                         if (authProvider.isLoading) {
-                          return const Center(child: CircularProgressIndicator(color: Color(0xFF1EA1F2)));
+                          return Center(
+                            child: SpinKitFadingCircle(
+                              color: Color(0xFF1EA1F2),
+                              size: 50.0,
+                            ),
+                          );
                         }
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -297,26 +334,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (result['success'] == true && mounted) {
                                     context.read<ProductController>().init();
                                     context.read<BillController>().init();
-                                    
+
                                     showTopSnackBar(
                                       Overlay.of(context),
                                       const CustomSnackBar.success(
                                         message: 'LoggedIn successfully',
                                       ),
-                                      displayDuration: const Duration(seconds: 2),
+                                      displayDuration: const Duration(
+                                        seconds: 2,
+                                      ),
                                     );
 
                                     if (result['role'] == 'Employee') {
-                                      final assignedShops = result['assignedShops'] as List<dynamic>?;
-                                      if (assignedShops == null || assignedShops.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('No shops assigned to your account. Contact owner.')),
+                                      final assignedShops =
+                                          result['assignedShops']
+                                              as List<dynamic>?;
+                                      if (assignedShops == null ||
+                                          assignedShops.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No shops assigned to your account. Contact owner.',
+                                            ),
+                                          ),
                                         );
                                       } else {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => SelectAssignedShopScreen(assignedShops: assignedShops),
+                                            builder: (context) =>
+                                                SelectAssignedShopScreen(
+                                                  assignedShops: assignedShops,
+                                                ),
                                           ),
                                         );
                                       }
@@ -324,16 +375,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const NavbarScreen(),
+                                          builder: (context) =>
+                                              const NavbarScreen(),
                                         ),
                                       );
                                     }
-                                  } else if (result['isDeviceMismatch'] == true && mounted) {
+                                  } else if (result['isDeviceMismatch'] ==
+                                          true &&
+                                      mounted) {
                                     _showDeviceOverrideDialog(result);
-                                  } else if (mounted && authProvider.errorMessage.isNotEmpty) {
+                                  } else if (mounted &&
+                                      authProvider.errorMessage.isNotEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(authProvider.errorMessage),
+                                        content: Text(
+                                          authProvider.errorMessage,
+                                        ),
                                         backgroundColor: Colors.red,
                                       ),
                                     );
@@ -343,7 +400,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1EA1F2),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -372,9 +431,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             "Don't have an account?",
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withOpacity(0.7),
                                 ),
                           ),
                           TextButton(

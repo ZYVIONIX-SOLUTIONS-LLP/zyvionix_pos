@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -124,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context: context,
                   barrierDismissible: false,
                   builder: (_) =>
-                      const Center(child: CircularProgressIndicator()),
+                      const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0)),
                 );
 
                 final success = await BackupService.restoreData(userId);
@@ -623,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<BillController>(
       builder: (context, controller, _) {
         if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
         }
 
         final now = DateTime.now();
@@ -749,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<BillController>(
       builder: (context, controller, _) {
         if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
         }
 
         if (controller.bills.isEmpty) {

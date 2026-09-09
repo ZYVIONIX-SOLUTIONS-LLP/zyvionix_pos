@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 // ignore_for_file: unused_local_variable
 
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ import 'package:zyvionix_pos/views/profile/edit_profile.dart';
 import 'package:zyvionix_pos/views/reports/report_analytics.dart';
 import 'package:zyvionix_pos/views/settings/active_plan_screen.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
-import 'package:zyvionix_pos/views/auth/login_screen.dart';
+import 'package:zyvionix_pos/views/auth/login_screen.dart' hide SizedBox, Row;
 import 'package:zyvionix_pos/views/shops/manage_shops_screen.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
@@ -62,7 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      builder: (ctx) => const Center(
+        child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0),
+      ),
     );
 
     try {

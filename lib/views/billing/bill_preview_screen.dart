@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 // // ignore_for_file: unused_field
 
 // import 'package:flutter/material.dart';
@@ -348,7 +349,7 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: SpinKitFadingCircle(color: Colors.white, size: 20.0),
                   )
                 : Icon(
                     Icons.bluetooth_connected,

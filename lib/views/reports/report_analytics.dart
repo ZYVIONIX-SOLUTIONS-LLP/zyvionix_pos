@@ -1,3 +1,4 @@
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
@@ -144,7 +145,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
           : _analyticsData == null || _analyticsData!.isEmpty
               ? _buildEmptyState()
               : FadeTransition(
@@ -377,62 +378,76 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
 
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
+    final totalSales = values.fold(0.0, (sum, item) => sum + item);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
           )
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
           SizedBox(
-            width: 120,
-            height: 120,
-            child: CustomPaint(
-              painter: PieChartPainter(values, colors),
+            height: 200,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: CustomPaint(
+                    painter: DonutChartPainter(values, colors),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Total Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text(
+                      currency.format(totalSales),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: colors[index],
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          labels[index],
-                          style: const TextStyle(fontSize: 13, color: Colors.black87),
-                        ),
-                      ),
-                      Text(
-                        currency.format(values[index]),
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                      )
-                    ],
+          const SizedBox(height: 36),
+          Wrap(
+            spacing: 20,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
+            children: List.generate(4, (index) {
+              if (values[index] == 0) return const SizedBox.shrink();
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: colors[index],
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                );
-              }),
-            ),
+                  const SizedBox(width: 8),
+                  Text(
+                    labels[index],
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              );
+            }),
           ),
         ],
       ),
@@ -499,32 +514,57 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
   }
 }
 
-class PieChartPainter extends CustomPainter {
+class DonutChartPainter extends CustomPainter {
   final List<double> values;
   final List<Color> colors;
 
-  PieChartPainter(this.values, this.colors);
+  DonutChartPainter(this.values, this.colors);
 
   @override
   void paint(Canvas canvas, Size size) {
     double total = values.fold(0, (sum, item) => sum + item);
     if (total == 0) return;
 
+    final strokeWidth = 26.0;
+    final rect = Rect.fromLTWH(
+      strokeWidth / 2, 
+      strokeWidth / 2, 
+      size.width - strokeWidth, 
+      size.height - strokeWidth
+    );
+
+    // Subtle background track
+    final trackPaint = Paint()
+      ..color = Colors.grey.shade100
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(rect.center, rect.width / 2, trackPaint);
+
     double startAngle = -pi / 2;
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    int activeSlices = values.where((v) => v > 0).length;
+    final gapAngle = activeSlices > 1 ? 0.08 : 0.0;
 
     for (int i = 0; i < values.length; i++) {
-      final sweepAngle = (values[i] / total) * 2 * pi;
+      if (values[i] == 0) continue;
+
+      double sweepAngle = (values[i] / total) * 2 * pi;
+      
       final paint = Paint()
         ..color = colors[i % colors.length]
-        ..style = PaintingStyle.fill;
-      canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+
+      // Draw the arc, ensuring sweepAngle minus gap isn't negative
+      final drawSweep = max(0.01, sweepAngle - gapAngle);
+      canvas.drawArc(rect, startAngle + (gapAngle / 2), drawSweep, false, paint);
+      
       startAngle += sweepAngle;
     }
   }
 
   @override
-  bool shouldRepaint(covariant PieChartPainter oldDelegate) {
+  bool shouldRepaint(covariant DonutChartPainter oldDelegate) {
     return oldDelegate.values != values || oldDelegate.colors != colors;
   }
 }
