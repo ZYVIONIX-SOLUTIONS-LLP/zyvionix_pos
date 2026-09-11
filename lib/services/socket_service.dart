@@ -38,7 +38,7 @@ class SocketService {
     if (_socket != null && _socket!.connected) return;
 
     final uri = Uri.parse(ApiConstants.baseUrl);
-    final socketUrl = '${uri.scheme}://${uri.host}:${uri.port}';
+    final socketUrl = uri.origin;
 
     _socket = IO.io(socketUrl, <String, dynamic>{
       'transports': ['websocket'],

@@ -43,7 +43,7 @@ class MaintenanceService {
 
   void initSocket() {
     final uri = Uri.parse(ApiConstants.baseUrl);
-    final socketUrl = '${uri.scheme}://${uri.host}:${uri.port}';
+    final socketUrl = uri.origin;
 
     _socket = IO.io(socketUrl, <String, dynamic>{
       'transports': ['websocket'],
