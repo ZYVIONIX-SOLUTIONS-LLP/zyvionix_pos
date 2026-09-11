@@ -3,6 +3,7 @@ import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:intl/intl.dart';
 import '../models/bill.dart';
+import '../database/hive_boxes.dart';
 
 class BluetoothPrinterService {
   final BlueThermalPrinter _bluetooth = BlueThermalPrinter.instance;
@@ -44,23 +45,35 @@ class BluetoothPrinterService {
     );
     List<int> bytes = [];
 
+    final box = HiveBoxes.getSettingsBox();
+    String companyName = box.get('shop_name', defaultValue: 'ZYVIONIX POS');
+    String address = box.get('offline_company_address', defaultValue: '');
+    String rawPhone = box.get('shop_mobile') ?? box.get('user_phone') ?? '';
+
     bytes += generator.text(
-      'ZYVIONIX POS',
+      companyName,
       styles: const PosStyles(
         align: PosAlign.center,
         height: PosTextSize.size2,
         width: PosTextSize.size2,
+        bold: true,
       ),
     );
 
-    bytes += generator.text(
-      'Ernakulam, Kochi',
-      styles: const PosStyles(align: PosAlign.center),
-    );
-    bytes += generator.text(
-      'Ph: 6282714883',
-      styles: const PosStyles(align: PosAlign.center),
-    );
+    if (address.isNotEmpty) {
+      bytes += generator.text(
+        address,
+        styles: const PosStyles(align: PosAlign.center),
+      );
+    }
+    
+    if (rawPhone.isNotEmpty) {
+      bytes += generator.text(
+        'Ph: $rawPhone',
+        styles: const PosStyles(align: PosAlign.center),
+      );
+    }
+    
     bytes += generator.feed(1);
 
     bytes += generator.hr();
@@ -80,7 +93,7 @@ class BluetoothPrinterService {
     bytes += generator.hr();
 
     bytes += generator.row([
-      PosColumn(text: 'Item', width: 5, styles: const PosStyles(bold: true)),
+      PosColumn(text: 'Item', width: 4, styles: const PosStyles(bold: true)),
       PosColumn(
         text: 'Qty',
         width: 2,
@@ -88,7 +101,7 @@ class BluetoothPrinterService {
       ),
       PosColumn(
         text: 'Price',
-        width: 2,
+        width: 3,
         styles: const PosStyles(bold: true, align: PosAlign.right),
       ),
       PosColumn(
@@ -101,7 +114,7 @@ class BluetoothPrinterService {
 
     for (var item in bill.items) {
       bytes += generator.row([
-        PosColumn(text: item.product.name, width: 5),
+        PosColumn(text: item.product.name, width: 4),
         PosColumn(
           text: '${item.quantity}',
           width: 2,
@@ -109,7 +122,7 @@ class BluetoothPrinterService {
         ),
         PosColumn(
           text: item.price.toStringAsFixed(2),
-          width: 2,
+          width: 3,
           styles: const PosStyles(align: PosAlign.right),
         ),
         PosColumn(

@@ -58,4 +58,5 @@ flutter:
     - assets/companylogoimage.jpeg
     - assets/splashimage.png
     - assets/bannerimage.png
+    - assets/billingsplash.png
     - assets/empty_search.json

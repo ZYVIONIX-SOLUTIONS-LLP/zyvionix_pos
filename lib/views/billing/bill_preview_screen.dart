@@ -313,13 +313,6 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
         title: const Text('Bill Preview'),
         actions: [
           IconButton(
-            tooltip: _showFullPdf ? 'Styled preview' : 'Full PDF preview',
-            icon: Icon(
-              _showFullPdf ? Icons.receipt_long : Icons.picture_as_pdf_outlined,
-            ),
-            onPressed: () => setState(() => _showFullPdf = !_showFullPdf),
-          ),
-          IconButton(
             tooltip: 'Share',
             icon: _isSharing
                 ? const SizedBox(
@@ -332,16 +325,6 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                   )
                 : const Icon(Icons.share),
             onPressed: _isSharing ? null : _shareReceipt,
-          ),
-          IconButton(
-            tooltip: 'System Print',
-            icon: const Icon(Icons.print),
-            onPressed: () async {
-              await Printing.layoutPdf(
-                onLayout: (PdfPageFormat format) async =>
-                    PdfService.generateReceipt(widget.bill),
-              );
-            },
           ),
           IconButton(
             tooltip: 'Thermal Print',
