@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/products/product_list_screen.dart';
 import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
+import 'package:zyvionix_pos/utils/subscription_helper.dart';
+import 'package:zyvionix_pos/database/hive_boxes.dart';
 import '../../controllers/bill_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
@@ -24,6 +26,14 @@ class _BillingScreenState extends State<BillingScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _isEmployee = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final box = HiveBoxes.getSettingsBox();
+    _isEmployee = box.get('user_role') == 'Employee';
+  }
 
   @override
   void dispose() {
@@ -78,7 +88,20 @@ class _BillingScreenState extends State<BillingScreen> {
         centerTitle: !_isSearching,
         automaticallyImplyLeading: false,
         actions: [
-          if (_selectedProductIds.length == 1)
+          if (!_isEmployee)
+            IconButton(
+              icon: const Icon(Icons.add_rounded, color: AppColors.primary, size: 28),
+              tooltip: 'Add Product',
+              onPressed: () async {
+                final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+                if (!canProceed) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+                );
+              },
+            ),
+          if (_selectedProductIds.length == 1 && !_isEmployee)
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.blue),
               tooltip: 'Edit Product',
@@ -95,6 +118,7 @@ class _BillingScreenState extends State<BillingScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.list_alt),
+            tooltip: 'Product List',
             onPressed: () {
               Navigator.push(
                 context,

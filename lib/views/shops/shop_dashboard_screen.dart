@@ -306,21 +306,7 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                     title: 'Employees',
                     subtitle: 'Manage staff for this shop',
                     onTap: () {
-                      final storageType = HiveBoxes.getSettingsBox().get(
-                        'storageType',
-                        defaultValue: 'Device Storage',
-                      );
-                      if (storageType == 'Device Storage' ||
-                          storageType == 'device') {
-                        showTopSnackBar(
-                          Overlay.of(context),
-                          const CustomSnackBar.info(
-                            message:
-                                'Employee management is only available in Cloud Storage',
-                          ),
-                        );
-                        return;
-                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(

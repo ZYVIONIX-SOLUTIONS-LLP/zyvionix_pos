@@ -7,12 +7,12 @@ import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
-// import 'package:zyvionix_pos/views/notifications/notification_screen.dart';
+import 'package:zyvionix_pos/screens/notifications_screen.dart';
 import 'package:zyvionix_pos/views/profile/edit_profile.dart';
 import 'package:zyvionix_pos/views/reports/report_analytics.dart';
 import 'package:zyvionix_pos/views/settings/active_plan_screen.dart';
 import 'package:zyvionix_pos/views/profile/help_screen.dart';
-import 'package:zyvionix_pos/views/auth/login_screen.dart' hide SizedBox, Row;
+import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'package:zyvionix_pos/views/shops/manage_shops_screen.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
@@ -20,11 +20,12 @@ import 'package:zyvionix_pos/views/settings/upgrade_plan_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
-import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:zyvionix_pos/views/hardware/hardware_store_screen.dart';
+import 'package:zyvionix_pos/views/hardware/hardware_orders_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -195,6 +196,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.notifications_active_rounded,
+                      iconColor: Colors.amber,
+                      title: 'Notifications',
+                      subtitle: 'View your alerts and updates',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationsScreen(
+                              userId: box.get('user_id', defaultValue: ''),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     if (!isEmployee) ...[
                       _divider(),
                       _buildMenuItem(
@@ -226,6 +244,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const ActivePlanScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _divider(),
+                      _buildMenuItem(
+                        icon: Icons.print_rounded,
+                        iconColor: Colors.indigo,
+                        title: 'POS Store',
+                        subtitle: 'Printers, Scanners, Cash Drawers & Rolls',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HardwareStoreScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _divider(),
+                      _buildMenuItem(
+                        icon: Icons.local_shipping_rounded,
+                        iconColor: Colors.teal,
+                        title: 'My Orders',
+                        subtitle: 'Track status of ordered POS accessories',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const HardwareOrdersScreen(),
                             ),
                           );
                         },
@@ -344,6 +393,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _showLogoutDialog(context);
                       },
                     ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.delete_forever_rounded,
+                      iconColor: Colors.red,
+                      title: 'Delete Account',
+                      titleColor: Colors.red,
+                      showArrow: false,
+                      onTap: () {
+                        _showDeleteAccountDialog(context);
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -413,17 +473,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-                  onPressed: () {
-                    context.read<BottomNavbarProvider>().setIndex(0);
-                  },
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.topLeft,
+              //   child: IconButton(
+              //     padding: EdgeInsets.zero,
+              //     constraints: const BoxConstraints(),
+              //     icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+              //     onPressed: () {
+              //       context.read<BottomNavbarProvider>().setIndex(0);
+              //     },
+              //   ),
+              // ),
               Column(
                 children: [
                   const SizedBox(height: 14),
@@ -627,6 +687,123 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+        ),
+        content: const Text(
+          'Are you sure you want to delete your account? You will not be able to log in with this account again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx); // Close confirmation dialog
+
+              // Show loading spinner dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(
+                  child: SpinKitFadingCircle(
+                    color: Color(0xFF1EA1F2),
+                    size: 50.0,
+                  ),
+                ),
+              );
+
+              try {
+                final box = HiveBoxes.getSettingsBox();
+                final token = box.get('auth_token');
+                final response = await http.delete(
+                  Uri.parse('${ApiConstants.baseUrl}/auth/delete-account'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Close loading spinner
+                }
+
+                print(
+                  'Response status code for delete account ${response.statusCode}',
+                );
+
+                print(
+                  'Response bodyyyy for delete account ${response.statusCode}',
+                );
+
+                if (response.statusCode == 200) {
+                  context.read<ProductController>().clear();
+                  context.read<BillController>().clear();
+                  await context.read<AuthProvider>().logout();
+
+                  if (context.mounted) {
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      const CustomSnackBar.error(
+                        message: 'Account deleted successfully.',
+                      ),
+                      displayDuration: const Duration(seconds: 3),
+                    );
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  }
+                } else {
+                  final data = jsonDecode(response.body);
+                  if (context.mounted) {
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      CustomSnackBar.error(
+                        message: data['message'] ?? 'Failed to delete account',
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Close loading spinner if open
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    const CustomSnackBar.error(
+                      message: 'Connection error while deleting account.',
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

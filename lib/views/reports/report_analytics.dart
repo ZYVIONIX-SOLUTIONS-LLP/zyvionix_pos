@@ -42,90 +42,26 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     
-    final settingsBox = HiveBoxes.getSettingsBox();
-    final storageType = settingsBox.get('storageType', defaultValue: 'Device Storage');
-    final isCloud = storageType == 'Cloud Storage' || storageType == 'cloud';
-
-    if (isCloud) {
-      final data = await ApiService.getAnalytics();
-      if (data != null) {
-        _analyticsData = data;
-      }
-    } else {
-      _analyticsData = _calculateLocalAnalytics();
-    }
+    final data = await ApiService.getAnalytics();
+    _analyticsData = (data != null && data.isNotEmpty)
+        ? data
+        : {
+            'overview': {
+              'totalRevenue': 0,
+              'totalBills': 0,
+              'avgOrderValue': 0,
+            },
+            'salesTrend': [
+              {'revenue': 0},
+              {'revenue': 0},
+              {'revenue': 0},
+              {'revenue': 0},
+            ],
+            'topProducts': [],
+          };
 
     setState(() => _isLoading = false);
-    if (_analyticsData != null) {
-      _animController.forward();
-    }
-  }
-
-  Map<String, dynamic> _calculateLocalAnalytics() {
-    final billsBox = HiveBoxes.getBillsBox();
-    if (billsBox == null) return {};
-
-    final allBills = billsBox.values.toList();
-    
-    // 1. Overview
-    double totalRevenue = 0;
-    for (var b in allBills) {
-      totalRevenue += b.grandTotal;
-    }
-    final totalBills = allBills.length;
-    final avgOrderValue = totalBills > 0 ? totalRevenue / totalBills : 0;
-
-    // 2. Sales Trend (Last 30 Days)
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-    final recentBills = allBills.where((b) => b.date.isAfter(thirtyDaysAgo)).toList();
-    
-    Map<String, double> salesTrendMap = {};
-    for (int i = 29; i >= 0; i--) {
-      final d = DateTime.now().subtract(Duration(days: i));
-      final dateStr = DateFormat('yyyy-MM-dd').format(d);
-      salesTrendMap[dateStr] = 0;
-    }
-
-    for (var b in recentBills) {
-      final dateStr = DateFormat('yyyy-MM-dd').format(b.date);
-      if (salesTrendMap.containsKey(dateStr)) {
-        salesTrendMap[dateStr] = salesTrendMap[dateStr]! + b.grandTotal;
-      }
-    }
-
-    final salesTrend = salesTrendMap.entries.map((e) => {
-      'date': e.key,
-      'revenue': e.value
-    }).toList();
-
-    // 3. Top Products
-    Map<String, Map<String, dynamic>> productSales = {};
-    for (var b in allBills) {
-      for (var item in b.items) {
-        if (!productSales.containsKey(item.product.name)) {
-          productSales[item.product.name] = {
-            'name': item.product.name,
-            'quantity': 0,
-            'revenue': 0.0,
-          };
-        }
-        productSales[item.product.name]!['quantity'] += item.quantity;
-        productSales[item.product.name]!['revenue'] += item.total;
-      }
-    }
-
-    final topProducts = productSales.values.toList();
-    topProducts.sort((a, b) => (b['revenue'] as double).compareTo(a['revenue'] as double));
-
-    return {
-      'overview': {
-        'totalRevenue': totalRevenue,
-        'totalBills': totalBills,
-        'avgOrderValue': avgOrderValue,
-      },
-      'salesTrend': salesTrend,
-      'topProducts': topProducts.take(10).toList(),
-    };
+    _animController.forward();
   }
 
   @override
@@ -146,32 +82,30 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
       ),
       body: _isLoading
           ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
-          : _analyticsData == null || _analyticsData!.isEmpty
-              ? _buildEmptyState()
-              : FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 20),
-                        _buildOverviewCards(),
-                        const SizedBox(height: 24),
-                        _buildSectionTitle('Sales Distribution (Weekly)'),
-                        const SizedBox(height: 12),
-                        _buildSalesChart(),
-                        const SizedBox(height: 24),
-                        _buildSectionTitle('Top Selling Products'),
-                        const SizedBox(height: 12),
-                        _buildTopProducts(),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    _buildOverviewCards(),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Sales Distribution (Weekly)'),
+                    const SizedBox(height: 12),
+                    _buildSalesChart(),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Top Selling Products'),
+                    const SizedBox(height: 12),
+                    _buildTopProducts(),
+                    const SizedBox(height: 40),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 
@@ -428,7 +362,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
             runSpacing: 16,
             alignment: WrapAlignment.center,
             children: List.generate(4, (index) {
-              if (values[index] == 0) return const SizedBox.shrink();
+              if (totalSales > 0 && values[index] == 0) return const SizedBox.shrink();
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -523,7 +457,6 @@ class DonutChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     double total = values.fold(0, (sum, item) => sum + item);
-    if (total == 0) return;
 
     final strokeWidth = 26.0;
     final rect = Rect.fromLTWH(
@@ -535,10 +468,12 @@ class DonutChartPainter extends CustomPainter {
 
     // Subtle background track
     final trackPaint = Paint()
-      ..color = Colors.grey.shade100
+      ..color = Colors.grey.shade200
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(rect.center, rect.width / 2, trackPaint);
+
+    if (total == 0) return;
 
     double startAngle = -pi / 2;
     int activeSlices = values.where((v) => v > 0).length;

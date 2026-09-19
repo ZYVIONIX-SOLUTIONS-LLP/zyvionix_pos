@@ -1,4 +1,3 @@
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
@@ -21,6 +20,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
   List<dynamic> _shops = [];
   String _currentShopId = '';
   bool _hasSubscription = false;
+  bool _isBasePlan = false;
 
   @override
   void initState() {
@@ -32,8 +32,10 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
     final profile = await ApiService.getProfile();
     if (profile != null && profile['currentPlan'] != null) {
       _hasSubscription = true;
+      _isBasePlan = profile['currentPlan']['planName'] == 'Base Plan' || profile['currentPlan']['isDefaultTrial'] == true;
     } else {
       _hasSubscription = false;
+      _isBasePlan = false;
     }
     await _fetchShops();
   }
@@ -42,34 +44,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
     final box = HiveBoxes.getSettingsBox();
     final token = box.get('auth_token');
     _currentShopId = box.get('current_shop_id', defaultValue: '');
-    final storageType = box.get('storageType', defaultValue: 'Device Storage');
 
-    if (storageType == 'Device Storage' || storageType == 'device') {
-      final localShopId = box.get('shop_id');
-      if (localShopId != null) {
-        setState(() {
-          _shops = [
-            {
-              '_id': localShopId,
-              'name': box.get('shop_name', defaultValue: 'My Shop'),
-              'address': box.get('offline_company_address', defaultValue: ''),
-            }
-          ];
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _shops = [];
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    if (token == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
 
     try {
       final response = await http.get(
@@ -112,26 +87,35 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+            ? const Center(child: CircularProgressIndicator())
             : _buildContent(),
       ),
-      floatingActionButton: _hasSubscription ? FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateShopScreen(isForced: false),
-            ),
-          );
-          if (result == true) {
-            setState(() => _isLoading = true);
-            _fetchShops();
-          }
-        },
-        backgroundColor: const Color(0xFF1EA1F2),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Shop', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ) : null,
+      floatingActionButton: _hasSubscription && (!_isBasePlan || _shops.isEmpty)
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const CreateShopScreen(isForced: false),
+                  ),
+                );
+                if (result == true) {
+                  setState(() => _isLoading = true);
+                  _fetchShops();
+                }
+              },
+              backgroundColor: const Color(0xFF1EA1F2),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'New Shop',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -141,7 +125,11 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.storefront_outlined, size: 80, color: Colors.grey.shade400),
+            Icon(
+              Icons.storefront_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
             const SizedBox(height: 16),
             const Text(
               'No Shops Found',
@@ -181,7 +169,9 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: isActive ? Border.all(color: const Color(0xFF1EA1F2), width: 2) : null,
+              border: isActive
+                  ? Border.all(color: const Color(0xFF1EA1F2), width: 2)
+                  : null,
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x0A000000),
@@ -202,7 +192,9 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
-                    color: isActive ? const Color(0xFF1EA1F2) : Colors.grey.shade600,
+                    color: isActive
+                        ? const Color(0xFF1EA1F2)
+                        : Colors.grey.shade600,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -212,13 +204,20 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                     children: [
                       Text(
                         shop['name'] ?? 'Unknown Shop',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
-                      if (shop['address'] != null && shop['address'].isNotEmpty) ...[
+                      if (shop['address'] != null &&
+                          shop['address'].isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           shop['address'],
-                          style: const TextStyle(color: Colors.black54, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ],
@@ -226,18 +225,29 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                 ),
                 if (isActive)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1EA1F2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
                       'ACTIVE',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 if (!isActive)
-                  const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
               ],
             ),
           ),

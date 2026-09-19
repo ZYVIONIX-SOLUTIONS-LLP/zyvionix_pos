@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/models/bill.dart';
 import 'package:zyvionix_pos/views/billing/bill_preview_screen.dart';
-
+import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/controllers/bill_controller.dart';
 class BillHystory extends StatefulWidget {
   const BillHystory({super.key});
 
@@ -81,12 +82,13 @@ class _BillHystoryState extends State<BillHystory> {
             
             // Bills List
             Expanded(
-              child: HiveBoxes.getBillsBox() == null
-                  ? const Center(child: Text('Cloud storage enabled. Offline history unavailable.'))
-                  : ValueListenableBuilder(
-                      valueListenable: HiveBoxes.getBillsBox()!.listenable(),
-                      builder: (context, Box<Bill> box, _) {
-                  if (box.values.isEmpty) {
+              child: Consumer<BillController>(
+                builder: (context, billController, _) {
+                  if (billController.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (billController.bills.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -106,9 +108,8 @@ class _BillHystoryState extends State<BillHystory> {
                     );
                   }
 
-                  // Sort by most recent
-                  var bills = box.values.toList();
-                  bills.sort((a, b) => b.date.compareTo(a.date));
+                  // Use API bills directly
+                  var bills = billController.bills.toList();
 
                   // Filter by search query
                   if (_searchQuery.isNotEmpty) {

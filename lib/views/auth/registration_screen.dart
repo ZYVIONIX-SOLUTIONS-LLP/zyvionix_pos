@@ -21,8 +21,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _passwordController = TextEditingController();
 
   bool _isPasswordVisible = false;
-  String _storageType = 'Device Storage';
-
   @override
   void dispose() {
     _ownerNameController.dispose();
@@ -257,52 +255,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       isPassword: true,
                     ),
 
-                    const SizedBox(height: 8),
-                    Text(
-                      'Storage Preference',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
 
-                    // Storage Type Radio Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text(
-                              'Device Storage',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            value: 'Device Storage',
-                            groupValue: _storageType,
-                            contentPadding: EdgeInsets.zero,
-                            onChanged: (String? value) {
-                              setState(() {
-                                _storageType = value!;
-                              });
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text(
-                              'Cloud Storage',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            value: 'Cloud Storage',
-                            groupValue: _storageType,
-                            contentPadding: EdgeInsets.zero,
-                            onChanged: (String? value) {
-                              setState(() {
-                                _storageType = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
 
                     const SizedBox(height: 32),
 
@@ -326,7 +279,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     mobileNumber: _mobileNumberController.text.trim(),
                                     email: _emailController.text.trim(),
                                     password: _passwordController.text,
-                                    storagePreference: _storageType,
                                   );
 
                                   if (success && mounted) {

@@ -72,7 +72,7 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'You are currently using Device Storage. Upgrade to a Cloud Plan to sync your data across devices.',
+                'You do not have an active Cloud Plan. Upgrade to access all features.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.black54),
               ),

@@ -142,13 +142,12 @@ class _DeviceOverrideOtpScreenState extends State<DeviceOverrideOtpScreen> {
         final userId = data['user']['id'];
         await box.put('user_id', userId);
         await box.put('user_mobile', data['user']['mobileNumber']);
-        await box.put('storageType', data['user']['storagePreference'] ?? 'Device Storage');
+        await box.put('storageType', 'Cloud Storage');
         if (data['user']['companyName'] != null) {
           await box.put('shop_name', data['user']['companyName']);
         }
         await box.put('user_role', data['user']['role'] ?? 'Owner');
 
-        await HiveBoxes.openUserBoxes(userId);
 
         if (mounted) {
           context.read<ProductController>().init();

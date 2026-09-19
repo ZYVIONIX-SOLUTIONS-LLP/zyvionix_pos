@@ -1,18 +1,23 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/constants/api_constants.dart';
+import 'package:zyvionix_pos/models/bill.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
-import '../services/backup_service.dart';
 import 'billing/bill_preview_screen.dart';
 import '../controllers/bill_controller.dart';
 import '../controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
+import 'onboarding/onboarding_showcase_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
   Timer? _timer;
   int _currentPage = 0;
+  List<dynamic> _adminBanners = [];
+
+  String _selectedReportFilter = 'Today';
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
 
   String getGreeting() {
     final hour = DateTime.now().hour;
@@ -41,8 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      if (_currentPage < 2) {
+    _fetchBanners();
+    _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+      final maxPages = _adminBanners.isNotEmpty ? _adminBanners.length : 5;
+      if (_currentPage < maxPages - 1) {
         _currentPage++;
       } else {
         _currentPage = 0;
@@ -58,29 +70,51 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkBackupAndShop();
+      _checkShop();
     });
   }
 
-  Future<void> _checkBackupAndShop() async {
-    final box = HiveBoxes.getSettingsBox();
-    final storageType = box.get('storageType', defaultValue: 'Device Storage');
-
-    if (storageType == 'Device Storage') {
-      final userId = box.get('user_id') ?? '';
-      if (userId.isNotEmpty) {
-        final hasBackup = await BackupService.checkBackupExists(userId);
-        if (hasBackup) {
-          final productsBox = HiveBoxes.getProductsBox();
-          if (productsBox != null && productsBox.isEmpty) {
-            _showRestorePopup(userId);
-            return; // Stop here. We will check shop after the popup.
-          }
+  Future<void> _fetchBanners() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.bannersUrl}?status=Active'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _adminBanners = data;
+          });
         }
       }
-    }
+    } catch (_) {}
+  }
 
-    _checkShop();
+  Future<void> _refreshData() async {
+    try {
+      final billController = context.read<BillController>();
+      await billController.fetchBills();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Data refreshed successfully'),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to refresh data'),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _checkShop() async {
@@ -95,68 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-  }
 
-  void _showRestorePopup(String userId) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text('Restore Backup Data'),
-          content: const Text(
-            'We found an offline backup linked to this device storage account. Do you want to restore your products and bills?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _checkShop();
-              },
-              child: const Text('Skip'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) =>
-                      const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0)),
-                );
-
-                final success = await BackupService.restoreData(userId);
-
-                if (mounted) {
-                  Navigator.pop(context);
-                  if (success) {
-                    context.read<ProductController>().init();
-                    context.read<BillController>().init();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Colors.green,
-                        content: Text('Backup restored successfully!'),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to restore backup.'),
-                      ),
-                    );
-                  }
-                  _checkShop();
-                }
-              },
-              child: const Text('Restore'),
-            ),
-          ],
-        );
-      },
-    );
+    final isNewUser = box.get('is_new_user', defaultValue: false);
+    if (isNewUser == true && mounted) {
+      await OnboardingShowcaseDialog.show(context);
+    }
   }
 
   @override
@@ -251,65 +228,34 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FC),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 15),
-                _buildBanner(context),
-                const SizedBox(height: 24),
-                _buildSummaryCards(),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Recent Bills',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E1E1E),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BillHistoryScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'View All',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward,
-                          color: Colors.blue.shade700,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildRecentBills(),
-                const SizedBox(height: 100),
-              ],
+          child: RefreshIndicator(
+            onRefresh: _refreshData,
+            color: const Color(0xFF1C64F2),
+            backgroundColor: Colors.white,
+            strokeWidth: 2.5,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 15),
+                  _buildBanner(context),
+                  const SizedBox(height: 24),
+                  _buildSummaryCards(),
+                  const SizedBox(height: 24),
+                  _buildRecentBillsSection(),
+                  const SizedBox(height: 24),
+
+                  _buildReportAnalyticsHeader(context),
+                  const SizedBox(height: 16),
+                  _buildReportAnalyticsChart(),
+                  const SizedBox(height: 100),
+                ],
+              ),
             ),
           ),
         ),
@@ -393,14 +339,125 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBanner(BuildContext context) {
+    final count = _adminBanners.isNotEmpty ? _adminBanners.length : 5;
     return SizedBox(
       height: 170,
       child: PageView.builder(
         controller: _pageController,
-        itemCount: 5,
+        itemCount: count,
+        onPageChanged: (index) {
+          _currentPage = index;
+        },
         itemBuilder: (context, index) {
+          if (_adminBanners.isNotEmpty && index < _adminBanners.length) {
+            return _buildAdminBanner(context, _adminBanners[index]);
+          }
           return _buildSingleBanner(context);
         },
+      ),
+    );
+  }
+
+  Widget _buildAdminBanner(BuildContext context, dynamic banner) {
+    final String imageUrl = (banner['imageUrl'] ?? '').toString();
+    final String title = (banner['title'] ?? '').toString();
+    final String description = (banner['description'] ?? '').toString();
+
+    return GestureDetector(
+      onTap: () {
+        context.read<BottomNavbarProvider>().setIndex(1);
+      },
+      child: Container(
+        height: 170,
+        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xFF1E293B),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Banner Image
+              if (imageUrl.startsWith('data:image/'))
+                (() {
+                  try {
+                    final base64Str = imageUrl.split(',').last;
+                    final bytes = base64Decode(base64Str);
+                    return Image.memory(bytes, fit: BoxFit.cover);
+                  } catch (_) {
+                    return Container(color: const Color(0xFF1C64F2));
+                  }
+                })()
+              else if (imageUrl.isNotEmpty)
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: const Color(0xFF1C64F2)),
+                )
+              else
+                Container(color: const Color(0xFF1C64F2)),
+
+              // Overlay Gradient for readable text
+              if (title.isNotEmpty || description.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withOpacity(0.75),
+                        Colors.transparent,
+                      ],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                  ),
+                ),
+
+              if (title.isNotEmpty || description.isNotEmpty)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (title.isNotEmpty)
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      if (description.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -624,7 +681,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<BillController>(
       builder: (context, controller, _) {
         if (controller.isLoading) {
-          return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
+          return const Center(
+            child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0),
+          );
         }
 
         final now = DateTime.now();
@@ -746,32 +805,351 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecentBills() {
+  Widget _buildRecentBillsSection() {
     return Consumer<BillController>(
       builder: (context, controller, _) {
-        if (controller.isLoading) {
-          return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
-        }
-
-        if (controller.bills.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                'No recent bills.',
-                style: TextStyle(color: Colors.black54),
-              ),
-            ),
-          );
+        if (controller.isLoading || controller.bills.isEmpty) {
+          return const SizedBox.shrink();
         }
 
         var bills = List.from(controller.bills);
         bills.sort((a, b) => b.date.compareTo(a.date));
+        final recentBills = bills.take(2).toList();
 
-        // Take top 10 recent bills
-        final recentBills = bills.take(5).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Recent Bills',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E1E1E),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BillHistoryScreen(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Colors.blue.shade700,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade100, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.01),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: recentBills.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: Colors.grey.shade100,
+                  indent: 16,
+                  endIndent: 16,
+                ),
+                itemBuilder: (context, index) {
+                  final bill = recentBills[index];
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BillPreviewScreen(bill: bill),
+                        ),
+                      );
+                    },
+                    borderRadius: index == 0
+                        ? const BorderRadius.vertical(top: Radius.circular(16))
+                        : index == recentBills.length - 1
+                        ? const BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          )
+                        : BorderRadius.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.receipt_long,
+                              color: Colors.blue.shade700,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bill #${bill.billNumber}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  DateFormat(
+                                    'dd MMM, hh:mm a',
+                                  ).format(bill.date),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '₹${bill.grandTotal.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Paid',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: Colors.black26,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickCustomDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _customStartDate = picked;
+        _customEndDate = picked;
+      });
+    } else {
+      setState(() {
+        _selectedReportFilter = 'Today';
+      });
+    }
+  }
+
+  Widget _buildReportAnalyticsHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'Report & Analytics',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E1E1E),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedReportFilter,
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              items: ['Today', 'This Week', 'This Month', 'Custom'].map((
+                String value,
+              ) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedReportFilter = newValue;
+                  });
+                  if (newValue == 'Custom') {
+                    _pickCustomDate(context);
+                  }
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReportAnalyticsChart() {
+    return Consumer<BillController>(
+      builder: (context, controller, _) {
+        final now = DateTime.now();
+        List<Bill> filteredBills = [];
+
+        if (_selectedReportFilter == 'Today') {
+          filteredBills = controller.bills
+              .where(
+                (b) =>
+                    b.date.year == now.year &&
+                    b.date.month == now.month &&
+                    b.date.day == now.day,
+              )
+              .toList();
+        } else if (_selectedReportFilter == 'This Week') {
+          final weekStart = now.subtract(Duration(days: now.weekday - 1));
+          filteredBills = controller.bills
+              .where(
+                (b) =>
+                    b.date.isAfter(weekStart.subtract(const Duration(days: 1))),
+              )
+              .toList();
+        } else if (_selectedReportFilter == 'This Month') {
+          filteredBills = controller.bills
+              .where(
+                (b) => b.date.year == now.year && b.date.month == now.month,
+              )
+              .toList();
+        } else if (_selectedReportFilter == 'Custom' &&
+            _customStartDate != null) {
+          filteredBills = controller.bills
+              .where(
+                (b) =>
+                    b.date.year == _customStartDate!.year &&
+                    b.date.month == _customStartDate!.month &&
+                    b.date.day == _customStartDate!.day,
+              )
+              .toList();
+        }
+
+        Map<String, int> productSales = {};
+        for (var bill in filteredBills) {
+          for (var item in bill.items) {
+            productSales[item.product.name] =
+                (productSales[item.product.name] ?? 0) + item.quantity;
+          }
+        }
+
+        if (productSales.isEmpty) {
+          productSales = {'No Sales': 0};
+        }
+
+        var sortedSales = productSales.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        final topProducts = sortedSales.take(5).toList();
+        final double maxY = topProducts.first.value.toDouble() * 1.2;
+
+        List<BarChartGroupData> barGroups = [];
+        for (int i = 0; i < topProducts.length; i++) {
+          barGroups.add(
+            BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: topProducts[i].value.toDouble(),
+                  color: Colors.blue.shade400,
+                  width: 20,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
         return Container(
+          height: 300,
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -784,118 +1162,89 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: recentBills.length,
-            separatorBuilder: (_, __) => Divider(
-              height: 1,
-              color: Colors.grey.shade100,
-              indent: 16,
-              endIndent: 16,
-            ),
-            itemBuilder: (context, index) {
-              final bill = recentBills[index];
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BillPreviewScreen(bill: bill),
-                    ),
-                  );
-                },
-                borderRadius: index == 0
-                    ? const BorderRadius.vertical(top: Radius.circular(16))
-                    : index == recentBills.length - 1
-                    ? const BorderRadius.vertical(bottom: Radius.circular(16))
-                    : BorderRadius.zero,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.receipt_long,
-                          color: Colors.blue.shade700,
-                          size: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Top Selling Products',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: maxY == 0 ? 10 : maxY,
+                    barTouchData: BarTouchData(enabled: false),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            if (value.toInt() >= 0 &&
+                                value.toInt() < topProducts.length) {
+                              String text = topProducts[value.toInt()].key;
+                              if (text.length > 6)
+                                text = '${text.substring(0, 6)}..';
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  text,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox();
+                          },
+                          reservedSize: 28,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bill #${bill.billNumber}',
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            if (value == 0) return const SizedBox();
+                            return Text(
+                              value.toInt().toString(),
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              DateFormat('dd MMM, hh:mm a').format(bill.date),
-                              style: const TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 color: Colors.black54,
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '₹${bill.grandTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Paid',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
                       ),
-                      const SizedBox(width: 12),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Colors.black26,
-                        size: 18,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
                       ),
-                    ],
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: (maxY / 5) > 0
+                          ? (maxY / 5).ceilToDouble()
+                          : 1,
+                      getDrawingHorizontalLine: (value) =>
+                          FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    barGroups: barGroups,
                   ),
                 ),
-              );
-            },
+              ),
+            ],
           ),
         );
       },

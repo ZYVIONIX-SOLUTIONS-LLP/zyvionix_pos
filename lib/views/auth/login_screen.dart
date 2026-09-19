@@ -1,5 +1,6 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/auth/device_override_otp_screen.dart';
 import 'package:zyvionix_pos/views/auth/registration_screen.dart';
 import 'package:zyvionix_pos/views/auth/select_assigned_shop_screen.dart';
@@ -334,6 +335,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (result['success'] == true && mounted) {
                                     context.read<ProductController>().init();
                                     context.read<BillController>().init();
+
+                                    //// Added the index value////
+
+                                    context
+                                        .read<BottomNavbarProvider>()
+                                        .setIndex(0);
 
                                     showTopSnackBar(
                                       Overlay.of(context),

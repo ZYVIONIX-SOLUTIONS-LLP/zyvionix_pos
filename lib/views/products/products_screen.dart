@@ -5,6 +5,7 @@ import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
 import 'add_edit_product_screen.dart';
 import '../../constants/app_theme.dart';
+import '../../utils/subscription_helper.dart';
 
 class ProductsScreen extends StatelessWidget {
   const ProductsScreen({super.key});
@@ -17,7 +18,10 @@ class ProductsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
+            onPressed: () async {
+              final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+              if (!canProceed) return;
+
               Navigator.push(
                 context,
                 MaterialPageRoute(

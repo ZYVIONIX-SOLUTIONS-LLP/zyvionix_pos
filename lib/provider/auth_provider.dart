@@ -445,7 +445,7 @@ class AuthProvider extends ChangeNotifier {
 
         await box.put(
           'storageType',
-          data['user']['storagePreference'] ?? 'Device Storage',
+          'Cloud Storage',
         );
 
         if (data['user']['companyName'] != null) {
@@ -459,6 +459,8 @@ class AuthProvider extends ChangeNotifier {
         if (data['user']['hasPlan'] == true) {
           await box.put('subscriptionModalShown', true);
         }
+        await box.put('hasActivePlan', data['user']['hasActivePlan'] ?? false);
+        await box.put('is_new_user', data['user']['isNewUser'] ?? true);
 
         if (data['user']['role'] == 'Employee') {
           await box.put('employee_name', data['user']['name']);
@@ -508,7 +510,7 @@ class AuthProvider extends ChangeNotifier {
           }
         }
 
-        await HiveBoxes.openUserBoxes(userId);
+
         
         SocketService().initSocket();
 
@@ -555,7 +557,6 @@ class AuthProvider extends ChangeNotifier {
     required String mobileNumber,
     String? email,
     required String password,
-    required String storagePreference,
   }) async {
     _setLoading(true);
     _setErrorMessage('');
@@ -571,7 +572,6 @@ class AuthProvider extends ChangeNotifier {
           'mobileNumber': mobileNumber,
           'email': email ?? '',
           'password': password,
-          'storagePreference': storagePreference,
           'fcmToken': fcmToken ?? '',
         }),
       );

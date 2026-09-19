@@ -38,6 +38,7 @@ dependencies:
   socket_io_client: ^3.1.6
   flutter_spinkit: ^5.2.2
   razorpay_flutter: ^1.4.6
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:

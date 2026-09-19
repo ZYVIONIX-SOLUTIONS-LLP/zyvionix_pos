@@ -345,12 +345,37 @@ class ApiService {
         'Response  bodyyyyyyyyyyyyyyyyyyy for get profile apiiiiiiiiiii ${response.body}',
       );
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic> && data.containsKey('isNewUser')) {
+          final box = HiveBoxes.getSettingsBox();
+          await box.put('is_new_user', data['isNewUser'] == true);
+        }
+        return data;
       }
     } catch (e) {
       print("Error fetching profile: $e");
     }
     return null;
+  }
+
+  static Future<bool> completeOnboarding() async {
+    try {
+      final headers = await _getHeaders();
+      final uri = Uri.parse(
+        ApiConstants.productsUrl,
+      ).replace(path: '/api/auth/complete-onboarding');
+      final response = await http.post(uri, headers: headers);
+      _checkDeviceLock(response);
+
+      if (response.statusCode == 200) {
+        final box = HiveBoxes.getSettingsBox();
+        await box.put('is_new_user', false);
+        return true;
+      }
+    } catch (e) {
+      print("Error completing onboarding: $e");
+    }
+    return false;
   }
 
   static Future<bool> updateProfile(Map<String, dynamic> data) async {

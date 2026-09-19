@@ -45,47 +45,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
     });
 
     final box = HiveBoxes.getSettingsBox();
-    final storageType = box.get('storageType', defaultValue: 'Device Storage');
-    final userId = box.get('user_id');
-
     final shopName = _nameController.text.trim();
-    final shopId = DateTime.now().millisecondsSinceEpoch.toString();
-
-    if (storageType == 'Device Storage') {
-      // Save locally to Hive
-      final shop = Shop(
-        id: shopId,
-        ownerId: userId,
-        name: shopName,
-        address: _addressController.text.trim(),
-        mobile: _mobileController.text.trim(),
-        gst: _gstController.text.trim(),
-        email: _emailController.text.trim(),
-      );
-
-      // Save shop data in settings box for easy access in offline mode
-      await box.put('shop_id', shopId);
-      await box.put('shop_name', shopName);
-      await box.put('current_shop_id', shopId);
-      await box.put('offline_company_address', _addressController.text.trim());
-      await box.put('shop_mobile', _mobileController.text.trim());
-      await box.put('shop_email', _emailController.text.trim());
-      await box.put('shop_gst', _gstController.text.trim());
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Shop created locally!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
-      }
-    } else {
       // Save to Cloud via API
       try {
         final token = box.get('auth_token');
@@ -158,7 +118,6 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
         }
       }
     }
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,

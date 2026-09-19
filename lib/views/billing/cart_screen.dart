@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:zyvionix_pos/utils/subscription_helper.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/bill_controller.dart';
 import 'bill_preview_screen.dart';
@@ -273,6 +275,10 @@ class CartScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () async {
+                    // Check subscription before allowing checkout
+                    final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+                    if (!canProceed) return;
+
                     final bill = await controller.saveBill();
                     if (context.mounted) {
                       Navigator.pushReplacement(

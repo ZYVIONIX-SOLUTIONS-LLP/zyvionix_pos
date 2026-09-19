@@ -5,12 +5,8 @@ import '../models/bill.dart';
 import '../models/bill_item.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
-import '../services/backup_service.dart';
 
 class BillController extends ChangeNotifier {
-  Box<Bill>? _billsBox;
-  bool _isCloud = false;
-
   List<Bill> _bills = [];
   bool _isLoading = false;
 
@@ -44,21 +40,10 @@ class BillController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final settingsBox = HiveBoxes.getSettingsBox();
-    final storageType = settingsBox.get('storageType', defaultValue: 'Device Storage');
-    _isCloud = storageType == 'Cloud Storage' || storageType == 'cloud';
-    
-    if (!_isCloud) {
-      _billsBox = HiveBoxes.getBillsBox();
-      if (_billsBox != null) {
-        _bills = _billsBox!.values.toList();
-      }
-    } else {
-      try {
-        _bills = await ApiService.getBills();
-      } catch (e) {
-        _bills = [];
-      }
+    try {
+      _bills = await ApiService.getBills();
+    } catch (e) {
+      _bills = [];
     }
 
     _bills.sort((a, b) => b.date.compareTo(a.date));
@@ -66,9 +51,25 @@ class BillController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetches bills from API and updates the state
+  /// This method can be called multiple times (e.g., from pull-to-refresh)
+  Future<void> fetchBills() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _bills = await ApiService.getBills();
+      _bills.sort((a, b) => b.date.compareTo(a.date));
+    } catch (e) {
+      print('Error fetching bills: $e');
+      // Keep existing bills if fetch fails
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
   void clear() {
-    _billsBox = null;
-    _isCloud = false;
     _bills = [];
     _isLoading = false;
     clearCart();
@@ -136,12 +137,16 @@ class BillController extends ChangeNotifier {
 
   void loadBillForEditing(Bill bill) {
     _editingBill = bill;
-    _cart = List.from(bill.items.map((e) => BillItem(
+    _cart = List.from(
+      bill.items.map(
+        (e) => BillItem(
           product: e.product,
           quantity: e.quantity,
           price: e.price,
           total: e.total,
-        )));
+        ),
+      ),
+    );
     _tax = bill.tax;
     _paymentMethod = bill.paymentMethod;
     _companyName = bill.companyName;
@@ -151,15 +156,7 @@ class BillController extends ChangeNotifier {
 
   Future<bool> deleteBill(Bill bill) async {
     bool success = true;
-    if (_isCloud) {
-      success = await ApiService.deleteBill(bill.id);
-    } else {
-      if (_billsBox != null) {
-        await _billsBox!.delete(bill.id);
-        final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
-        await BackupService.backupData(userId);
-      }
-    }
+    success = await ApiService.deleteBill(bill.id);
     if (success) {
       _bills.removeWhere((b) => b.id == bill.id);
       notifyListeners();
@@ -170,11 +167,7 @@ class BillController extends ChangeNotifier {
   Future<Bill> saveBill() async {
     int billNumber = _editingBill?.billNumber ?? 1;
     if (_editingBill == null) {
-      if (!_isCloud && _billsBox != null) {
-        billNumber = _billsBox!.length + 1;
-      } else {
-        billNumber = DateTime.now().millisecondsSinceEpoch % 100000;
-      }
+      billNumber = DateTime.now().millisecondsSinceEpoch % 100000;
     }
 
     final now = DateTime.now();
@@ -196,18 +189,10 @@ class BillController extends ChangeNotifier {
       billedByType: _editingBill?.billedByType,
     );
 
-    if (_isCloud) {
-      if (_editingBill != null) {
-        await ApiService.updateBill(newBill);
-      } else {
-        await ApiService.addBill(newBill);
-      }
+    if (_editingBill != null) {
+      await ApiService.updateBill(newBill);
     } else {
-      if (_billsBox != null) {
-        await _billsBox!.put(newBill.id, newBill);
-        final userId = HiveBoxes.getSettingsBox().get('user_id') ?? '';
-        await BackupService.backupData(userId);
-      }
+      await ApiService.addBill(newBill);
     }
 
     if (_editingBill != null) {

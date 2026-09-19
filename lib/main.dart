@@ -12,7 +12,6 @@ import 'controllers/product_controller.dart';
 import 'controllers/bill_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'views/splash_screen.dart';
-import 'services/backup_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'views/firebase/firebase_service.dart';
 import 'views/firebase/local_notification_service.dart';
@@ -96,17 +95,7 @@ class _ZyvionixPosAppState extends State<ZyvionixPosApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      final box = HiveBoxes.getSettingsBox();
-      final storageType = box.get(
-        'storageType',
-        defaultValue: 'Device Storage',
-      );
-      if (storageType == 'Device Storage') {
-        final userId = box.get('user_id') ?? '';
-        if (userId.isNotEmpty) {
-          BackupService.backupData(userId);
-        }
-      }
+      // Background handling logic if needed
     }
   }
 
@@ -158,7 +147,7 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
         if (userId != null) {
           await HiveBoxes.openUserBoxes(userId);
         }
-        
+
         SocketService().initSocket();
 
         if (mounted) {

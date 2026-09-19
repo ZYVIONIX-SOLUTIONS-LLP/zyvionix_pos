@@ -58,30 +58,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
     });
 
     final box = HiveBoxes.getSettingsBox();
-    final storageType = box.get('storageType', defaultValue: 'Device Storage');
 
-    if (storageType == 'Device Storage' || storageType == 'device') {
-      // Offline edit
-      await box.put('shop_name', _nameController.text.trim());
-      await box.put('offline_company_address', _addressController.text.trim());
-      await box.put('shop_mobile', _mobileController.text.trim());
-      await box.put('shop_email', _emailController.text.trim());
-      await box.put('shop_gst', _gstController.text.trim());
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Shop updated locally!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
-      }
-    } else {
       // Save to Cloud via API
       try {
         final token = box.get('auth_token');
@@ -162,7 +139,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
           );
         }
       }
-    }
+
   }
 
   Widget _buildTextField({

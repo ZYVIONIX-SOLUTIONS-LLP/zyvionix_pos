@@ -7,6 +7,7 @@ import 'package:zyvionix_pos/controllers/bill_controller.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/billing/cart_screen.dart';
 import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
+import 'package:zyvionix_pos/utils/subscription_helper.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -41,21 +42,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final controller = context.watch<BillController>();
     final productList = context.watch<ProductController>().products;
 
-    final filteredProducts = searchController.text.isEmpty
-        ? productList.where((product) {
-            return controller.cart.any((item) => item.product.id == product.id);
-          }).toList()
-        : productList.where((product) {
-            final matchesQuery = product.name.toLowerCase().contains(
-              searchController.text.toLowerCase(),
-            );
-            final cat = (product.category?.isNotEmpty == true)
-                ? product.category!
-                : 'Uncategorized';
-            final matchesCategory =
-                selectedCategory == "All" || cat == selectedCategory;
-            return matchesQuery && matchesCategory;
-          }).toList();
+    final query = searchController.text.trim().toLowerCase();
+    final filteredProducts = productList.where((product) {
+      final matchesQuery = query.isEmpty ||
+          product.name.toLowerCase().contains(query) ||
+          (product.category != null && product.category!.toLowerCase().contains(query));
+      final cat = (product.category?.isNotEmpty == true)
+          ? product.category!
+          : 'Uncategorized';
+      final matchesCategory =
+          selectedCategory == "All" || cat == selectedCategory;
+      return matchesQuery && matchesCategory;
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -140,7 +138,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.add, color: Color(0xFF1EA1F2)),
-                        onPressed: () {
+                        onPressed: () async {
+                          final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+                          if (!canProceed) return;
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -181,7 +182,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           // ),
                           const SizedBox(height: 16),
                           Text(
-                            'No products found matching your search',
+                            productList.isEmpty
+                                ? 'No products added yet. Click + to add your first product!'
+                                : 'No products found matching your search',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey.shade600,
@@ -234,11 +237,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 controller.removeFromCart(itemToRemove);
                               }
 
-                              setState(() {
-                                searchController.clear();
-                                // Keep keyboard open!
-                                searchFocusNode.requestFocus();
-                              });
+                              setState(() {});
                             },
                             child: Padding(
                               padding: const EdgeInsets.all(8),

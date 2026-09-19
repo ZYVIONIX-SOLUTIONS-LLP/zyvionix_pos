@@ -359,24 +359,28 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                       ? widget.bill.paymentMethod
                       : 'Cash',
                   underline: const SizedBox(),
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.black87),
-                  items: {
-                    'Cash',
-                    'Google Pay',
-                    'Card',
-                    'UPI',
-                    'Other',
-                    if (widget.bill.paymentMethod.isNotEmpty)
-                      widget.bill.paymentMethod,
-                  }.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        value,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    );
-                  }).toList(),
+                  icon: const Icon(
+                    Icons.arrow_drop_down,
+                    color: Colors.black87,
+                  ),
+                  items:
+                      {
+                        'Cash',
+                        'Google Pay',
+                        'Card',
+                        'UPI',
+                        'Other',
+                        if (widget.bill.paymentMethod.isNotEmpty)
+                          widget.bill.paymentMethod,
+                      }.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        );
+                      }).toList(),
                   onChanged: (String? newValue) async {
                     if (newValue != null) {
                       setState(() {
@@ -419,15 +423,18 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit Bill'),
+                icon: const Icon(Icons.edit, size: 18),
+                label: const Text('Edit', style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   foregroundColor: Colors.blue.shade700,
                   side: BorderSide(color: Colors.blue.shade700),
                 ),
                 onPressed: () {
-                  final controller = Provider.of<BillController>(context, listen: false);
+                  final controller = Provider.of<BillController>(
+                    context,
+                    listen: false,
+                  );
                   controller.loadBillForEditing(widget.bill);
                   Navigator.pushReplacement(
                     context,
@@ -436,11 +443,33 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.delete),
-                label: const Text('Delete'),
+                icon: _isPrinting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.print, size: 18),
+                label: const Text('Print', style: TextStyle(fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.green.shade600,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: _isPrinting ? null : _printViaBluetooth,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('Delete', style: TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: Colors.red.shade600,
@@ -451,7 +480,9 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text('Delete Bill?'),
-                      content: const Text('Are you sure you want to delete this bill? This action cannot be undone.'),
+                      content: const Text(
+                        'Are you sure you want to delete this bill? This action cannot be undone.',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
@@ -459,26 +490,37 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ),
                       ],
                     ),
                   );
 
                   if (confirm == true) {
-                    final controller = Provider.of<BillController>(context, listen: false);
+                    final controller = Provider.of<BillController>(
+                      context,
+                      listen: false,
+                    );
                     final success = await controller.deleteBill(widget.bill);
                     if (success) {
                       if (context.mounted) {
-                        Navigator.pop(context); // Go back to history or home
+                        Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Bill deleted successfully')),
+                          const SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text('Bill deleted successfully'),
+                          ),
                         );
                       }
                     } else {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Failed to delete bill')),
+                          const SnackBar(
+                            content: Text('Failed to delete bill'),
+                          ),
                         );
                       }
                     }
