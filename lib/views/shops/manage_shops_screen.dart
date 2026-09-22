@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:http/http.dart' as http;
@@ -32,7 +33,9 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
     final profile = await ApiService.getProfile();
     if (profile != null && profile['currentPlan'] != null) {
       _hasSubscription = true;
-      _isBasePlan = profile['currentPlan']['planName'] == 'Base Plan' || profile['currentPlan']['isDefaultTrial'] == true;
+      _isBasePlan =
+          profile['currentPlan']['planName'] == 'Base Plan' ||
+          profile['currentPlan']['isDefaultTrial'] == true;
     } else {
       _hasSubscription = false;
       _isBasePlan = false;
@@ -44,7 +47,6 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
     final box = HiveBoxes.getSettingsBox();
     final token = box.get('auth_token');
     _currentShopId = box.get('current_shop_id', defaultValue: '');
-
 
     try {
       final response = await http.get(
@@ -77,10 +79,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Manage Shops',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
+        title: Text(context.tr('manage_shops')),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
@@ -107,13 +106,7 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
               },
               backgroundColor: const Color(0xFF1EA1F2),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'New Shop',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              label: Text(context.tr('new_shop')),
             )
           : null,
     );

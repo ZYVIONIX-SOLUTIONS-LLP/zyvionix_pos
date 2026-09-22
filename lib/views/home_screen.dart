@@ -17,6 +17,9 @@ import 'billing/bill_preview_screen.dart';
 import '../controllers/bill_controller.dart';
 import '../controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
+import '../utils/subscription_helper.dart';
+import '../controllers/language_controller.dart';
+import '../widgets/language_selector_sheet.dart';
 import 'onboarding/onboarding_showcase_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,15 +39,15 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _customStartDate;
   DateTime? _customEndDate;
 
-  String getGreeting() {
+  String getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
 
     if (hour >= 5 && hour < 12) {
-      return 'Good Morning,';
+      return context.tr('good_morning');
     } else if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon,';
+      return context.tr('good_afternoon');
     } else {
-      return 'Good Evening,';
+      return context.tr('good_evening');
     }
   }
 
@@ -122,6 +125,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final shopId = box.get('shop_id');
     final userRole = box.get('user_role', defaultValue: 'Owner');
 
+    final profile = await ApiService.getProfile();
+    if (profile != null) {
+      if (profile.containsKey('hasActivePlan')) {
+        await box.put('hasActivePlan', profile['hasActivePlan'] == true);
+      }
+      if (profile.containsKey('planExpiryDate') &&
+          profile['planExpiryDate'] != null) {
+        await box.put('planExpiryDate', profile['planExpiryDate'].toString());
+      }
+    }
+
+    if (!mounted) return;
+
     if (shopId == null && userRole == 'Owner') {
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -130,9 +146,15 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (!mounted) return;
+
     final isNewUser = box.get('is_new_user', defaultValue: false);
-    if (isNewUser == true && mounted) {
+    if (isNewUser == true) {
       await OnboardingShowcaseDialog.show(context);
+    }
+
+    if (mounted) {
+      await SubscriptionHelper.checkAndEnforcePlan(context);
     }
   }
 
@@ -226,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: _refreshData,
@@ -275,6 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
               defaultValue: 'Zyvionix Solutions',
             );
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -282,31 +305,75 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  getGreeting(),
-                  style: const TextStyle(
+                  getGreeting(context),
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black54,
+                    color: isDark ? Colors.white70 : Colors.black54,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   shopName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ],
             ),
-            GestureDetector(
-              onTap: () {
-                context.read<BottomNavbarProvider>().setIndex(2);
-              },
-              child: Row(
-                children: [
-                  Column(
+            Row(
+              children: [
+                Consumer<LanguageController>(
+                  builder: (context, langController, _) {
+                    return InkWell(
+                      onTap: () => LanguageSelectorSheet.show(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              langController.currentLanguageFlag,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              langController.currentLanguageCode.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade800,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 16,
+                              color: Colors.blue.shade800,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () {
+                    context.read<BottomNavbarProvider>().setIndex(2);
+                  },
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
@@ -329,8 +396,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         );
@@ -341,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBanner(BuildContext context) {
     final count = _adminBanners.isNotEmpty ? _adminBanners.length : 5;
     return SizedBox(
-      height: 170,
+      height: 120,
       child: PageView.builder(
         controller: _pageController,
         itemCount: count,
@@ -368,21 +435,21 @@ class _HomeScreenState extends State<HomeScreen> {
         context.read<BottomNavbarProvider>().setIndex(1);
       },
       child: Container(
-        height: 170,
+        height: 120,
         margin: const EdgeInsets.symmetric(horizontal: 4.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(8),
+          color: const Color.fromARGB(255, 255, 255, 255),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: const Color.fromARGB(255, 145, 145, 145).withOpacity(0.12),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -471,7 +538,7 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 170,
         margin: const EdgeInsets.symmetric(horizontal: 4.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
           gradient: const LinearGradient(
             colors: [Color(0xFF1C64F2), Color(0xFF3B82F6)],
             begin: Alignment.topLeft,
@@ -522,22 +589,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Create New Bill',
-                    style: TextStyle(
+                  Text(
+                    context.tr('create_new_bill'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Tap once to start billing\nquick and easy',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      height: 1.4,
                     ),
                   ),
                   const Spacer(),
@@ -567,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'START BILLING',
+                          context.tr('start_billing'),
                           style: TextStyle(
                             color: Colors.blue.shade700,
                             fontSize: 11,
@@ -706,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.currency_rupee,
                 iconColor: Colors.blue.shade700,
                 iconBgColor: Colors.blue.shade50,
-                title: "Today's Sale",
+                title: context.tr('todays_sale'),
                 value: '₹${todaysSale.toStringAsFixed(0)}',
                 trend: '12% vs yesterday', // Hardcoded trend for now
               ),
@@ -717,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.receipt_long,
                 iconColor: Colors.green.shade700,
                 iconBgColor: Colors.green.shade50,
-                title: "Bills Today",
+                title: context.tr('bills_today'),
                 value: billsToday.toString(),
                 trend: '8% vs yesterday', // Hardcoded trend for now
               ),
@@ -736,15 +794,19 @@ class _HomeScreenState extends State<HomeScreen> {
     required String value,
     required String trend,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade100, width: 1.5),
+        border: Border.all(
+          color: isDark ? const Color(0xFF333333) : Colors.grey.shade100,
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -767,9 +829,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black54,
+                    color: isDark ? Colors.white70 : Colors.black54,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -779,10 +841,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 4),
@@ -816,18 +878,19 @@ class _HomeScreenState extends State<HomeScreen> {
         bills.sort((a, b) => b.date.compareTo(a.date));
         final recentBills = bills.take(2).toList();
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Recent Bills',
+                Text(
+                  context.tr('recent_bills'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E1E1E),
+                    color: isDark ? Colors.white : const Color(0xFF1E1E1E),
                   ),
                 ),
                 GestureDetector(
@@ -842,7 +905,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     children: [
                       Text(
-                        'View All',
+                        context.tr('see_all'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -863,12 +926,17 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade100, width: 1.5),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF333333)
+                      : Colors.grey.shade100,
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.01),
+                    color: Colors.black.withValues(alpha: 0.01),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -880,7 +948,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: recentBills.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
-                  color: Colors.grey.shade100,
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
                   indent: 16,
                   endIndent: 16,
                 ),
@@ -912,7 +980,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: isDark
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -928,10 +998,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Text(
                                   'Bill #${bill.billNumber}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -939,9 +1011,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   DateFormat(
                                     'dd MMM, hh:mm a',
                                   ).format(bill.date),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.black54,
+                                    color: isDark
+                                        ? Colors.white54
+                                        : Colors.black54,
                                   ),
                                 ),
                               ],
@@ -952,10 +1026,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 '₹${bill.grandTotal.toStringAsFixed(2)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -969,7 +1043,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'Paid',
+                                  context.tr('paid'),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -1018,39 +1092,79 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildReportAnalyticsHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'Report & Analytics',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E1E1E),
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C64F2).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.insights_rounded,
+                color: Color(0xFF1C64F2),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              context.tr('report_analytics'),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? const Color(0xFF333333) : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
+              dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               value: _selectedReportFilter,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-              style: const TextStyle(
-                fontSize: 14,
+              icon: const Icon(
+                Icons.tune_rounded,
+                color: Color(0xFF1C64F2),
+                size: 18,
+              ),
+              style: TextStyle(
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
               ),
               items: ['Today', 'This Week', 'This Month', 'Custom'].map((
                 String value,
               ) {
+                final key = value == 'Today'
+                    ? 'today'
+                    : value == 'This Week'
+                    ? 'this_week'
+                    : value == 'This Month'
+                    ? 'this_month'
+                    : 'custom';
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value),
+                  child: Text(context.tr(key)),
                 );
               }).toList(),
               onChanged: (String? newValue) {
@@ -1073,6 +1187,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildReportAnalyticsChart() {
     return Consumer<BillController>(
       builder: (context, controller, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         final now = DateTime.now();
         List<Bill> filteredBills = [];
 
@@ -1087,10 +1202,16 @@ class _HomeScreenState extends State<HomeScreen> {
               .toList();
         } else if (_selectedReportFilter == 'This Week') {
           final weekStart = now.subtract(Duration(days: now.weekday - 1));
+          final startOfWeek = DateTime(
+            weekStart.year,
+            weekStart.month,
+            weekStart.day,
+          );
           filteredBills = controller.bills
               .where(
-                (b) =>
-                    b.date.isAfter(weekStart.subtract(const Duration(days: 1))),
+                (b) => b.date.isAfter(
+                  startOfWeek.subtract(const Duration(seconds: 1)),
+                ),
               )
               .toList();
         } else if (_selectedReportFilter == 'This Month') {
@@ -1112,34 +1233,57 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         Map<String, int> productSales = {};
+        int totalUnitsSold = 0;
+
         for (var bill in filteredBills) {
           for (var item in bill.items) {
             productSales[item.product.name] =
                 (productSales[item.product.name] ?? 0) + item.quantity;
+            totalUnitsSold += item.quantity;
           }
         }
 
-        if (productSales.isEmpty) {
-          productSales = {'No Sales': 0};
-        }
+        final bool hasData = productSales.isNotEmpty;
 
         var sortedSales = productSales.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
-        final topProducts = sortedSales.take(5).toList();
-        final double maxY = topProducts.first.value.toDouble() * 1.2;
+        final topProducts = hasData ? sortedSales.take(5).toList() : [];
+
+        final double rawMax = hasData
+            ? topProducts.first.value.toDouble()
+            : 10.0;
+        final double maxY = (rawMax * 1.25).ceilToDouble();
 
         List<BarChartGroupData> barGroups = [];
         for (int i = 0; i < topProducts.length; i++) {
+          final isTopOne = i == 0;
           barGroups.add(
             BarChartGroupData(
               x: i,
               barRods: [
                 BarChartRodData(
                   toY: topProducts[i].value.toDouble(),
-                  color: Colors.blue.shade400,
+                  gradient: isTopOne
+                      ? const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
                   width: 20,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
+                    top: Radius.circular(8),
+                  ),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: maxY,
+                    color: isDark
+                        ? const Color(0xFF2A2A2A)
+                        : const Color(0xFFF1F5F9),
                   ),
                 ),
               ],
@@ -1148,101 +1292,235 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Container(
-          height: 300,
-          padding: const EdgeInsets.all(16),
+          height: 310,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100, width: 1.5),
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? const Color(0xFF333333) : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.01),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Top Selling Products',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black54,
-                ),
+              // Header inside chart container
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('top_products'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.tr('units_sold'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (hasData)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department_rounded,
+                            color: Color(0xFF2563EB),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$totalUnitsSold ${context.tr('units_sold')}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 20),
+
+              // Chart Body or Empty State
               Expanded(
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: maxY == 0 ? 10 : maxY,
-                    barTouchData: BarTouchData(enabled: false),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            if (value.toInt() >= 0 &&
-                                value.toInt() < topProducts.length) {
-                              String text = topProducts[value.toInt()].key;
-                              if (text.length > 6)
-                                text = '${text.substring(0, 6)}..';
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  text,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              );
-                            }
-                            return const SizedBox();
-                          },
-                          reservedSize: 28,
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 28,
-                          getTitlesWidget: (value, meta) {
-                            if (value == 0) return const SizedBox();
-                            return Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.black54,
+                child: !hasData
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
                               ),
-                            );
-                          },
+                              child: const Icon(
+                                Icons.bar_chart_outlined,
+                                size: 36,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.tr('no_sales_recorded'),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Create bills for ${_selectedReportFilter.toLowerCase()} to view analytics.',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceAround,
+                          maxY: maxY == 0 ? 10 : maxY,
+                          barTouchData: BarTouchData(
+                            enabled: true,
+                            touchTooltipData: BarTouchTooltipData(
+                              getTooltipColor: (group) =>
+                                  const Color(0xFF0F172A),
+                              tooltipRoundedRadius: 10,
+                              tooltipPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              getTooltipItem:
+                                  (group, groupIndex, rod, rodIndex) {
+                                    final item = topProducts[groupIndex];
+                                    return BarTooltipItem(
+                                      '${item.key}\n',
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: '${rod.toY.toInt()} Units Sold',
+                                          style: const TextStyle(
+                                            color: Color(0xFF38BDF8),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                            ),
+                          ),
+                          titlesData: FlTitlesData(
+                            show: true,
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  if (value.toInt() >= 0 &&
+                                      value.toInt() < topProducts.length) {
+                                    String text =
+                                        topProducts[value.toInt()].key;
+                                    if (text.length > 7) {
+                                      text = '${text.substring(0, 7)}..';
+                                    }
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        text,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox();
+                                },
+                                reservedSize: 28,
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 28,
+                                getTitlesWidget: (value, meta) {
+                                  if (value == 0) return const SizedBox();
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                          ),
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                            horizontalInterval: (maxY / 4) > 0
+                                ? (maxY / 4).ceilToDouble()
+                                : 1,
+                            getDrawingHorizontalLine: (value) => FlLine(
+                              color: const Color(0xFFE2E8F0),
+                              strokeWidth: 1,
+                              dashArray: [4, 4],
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          barGroups: barGroups,
                         ),
                       ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                    ),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: (maxY / 5) > 0
-                          ? (maxY / 5).ceilToDouble()
-                          : 1,
-                      getDrawingHorizontalLine: (value) =>
-                          FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: barGroups,
-                  ),
-                ),
               ),
             ],
           ),

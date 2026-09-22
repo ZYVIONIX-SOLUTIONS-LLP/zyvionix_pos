@@ -55,8 +55,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
       return matchesQuery && matchesCategory;
     }).toList();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'proceed',
@@ -87,7 +88,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               child: Row(
                 children: [
                   Expanded(
@@ -117,7 +118,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               )
                             : null,
                         filled: true,
-                        fillColor: Colors.grey.shade100,
+                        fillColor: isDark ? const Color(0xFF2A2A2A) : Colors.grey.shade100,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -208,8 +209,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
                             color: isInCart
-                                ? Colors.blue.shade50
-                                : Colors.white,
+                                ? (isDark ? const Color(0xFF1E3A8A) : Colors.blue.shade50)
+                                : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isInCart

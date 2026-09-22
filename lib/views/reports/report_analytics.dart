@@ -1,9 +1,8 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import '../../services/api_service.dart';
-import '../../database/hive_boxes.dart';
-import '../../models/bill.dart';
 import 'dart:math';
 
 class ReportAnalytics extends StatefulWidget {
@@ -13,7 +12,8 @@ class ReportAnalytics extends StatefulWidget {
   State<ReportAnalytics> createState() => _ReportAnalyticsState();
 }
 
-class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProviderStateMixin {
+class _ReportAnalyticsState extends State<ReportAnalytics>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   Map<String, dynamic>? _analyticsData;
   late AnimationController _animController;
@@ -41,7 +41,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     final data = await ApiService.getAnalytics();
     _analyticsData = (data != null && data.isNotEmpty)
         ? data
@@ -69,19 +69,17 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text('Reports & Analytics', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-        backgroundColor: Colors.white,
+        title: Text(context.tr('report_analytics')),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          )
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
       ),
       body: _isLoading
-          ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+          ? const Center(
+              child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0),
+            )
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
@@ -118,13 +116,17 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
           const SizedBox(height: 16),
           Text(
             'No Analytics Data',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Create some bills to see insights here.',
             style: TextStyle(color: Colors.grey.shade500),
-          )
+          ),
         ],
       ),
     );
@@ -139,9 +141,13 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Business Insights',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+            Text(
+              context.tr('business_insights'),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF111827),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -177,7 +183,9 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
           value: currency.format(totalRevenue),
           icon: Icons.account_balance_wallet,
           color: const Color(0xFF10B981),
-          gradient: const LinearGradient(colors: [Color(0xFF34D399), Color(0xFF10B981)]),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF34D399), Color(0xFF10B981)],
+          ),
         ),
         const SizedBox(height: 16),
         Row(
@@ -188,7 +196,9 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                 value: totalBills.toString(),
                 icon: Icons.receipt_long,
                 color: const Color(0xFF3B82F6),
-                gradient: const LinearGradient(colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)]),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -198,7 +208,9 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                 value: currency.format(avgOrderValue),
                 icon: Icons.shopping_cart,
                 color: const Color(0xFF8B5CF6),
-                gradient: const LinearGradient(colors: [Color(0xFFA78BFA), Color(0xFF8B5CF6)]),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFA78BFA), Color(0xFF8B5CF6)],
+                ),
               ),
             ),
           ],
@@ -224,7 +236,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
             color: color.withOpacity(0.15),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -265,7 +277,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -285,7 +297,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
   Widget _buildSalesChart() {
     final salesTrend = _analyticsData!['salesTrend'] as List<dynamic>? ?? [];
     if (salesTrend.isEmpty) {
-      return const SizedBox(height: 200, child: Center(child: Text('Not enough data')));
+      return const SizedBox(
+        height: 200,
+        child: Center(child: Text('Not enough data')),
+      );
     }
 
     double week1 = 0; // Oldest 7 days
@@ -295,10 +310,14 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
 
     for (int i = 0; i < salesTrend.length; i++) {
       final rev = (salesTrend[i]['revenue'] ?? 0).toDouble();
-      if (i < 7) week1 += rev;
-      else if (i < 14) week2 += rev;
-      else if (i < 21) week3 += rev;
-      else week4 += rev;
+      if (i < 7)
+        week1 += rev;
+      else if (i < 14)
+        week2 += rev;
+      else if (i < 21)
+        week3 += rev;
+      else
+        week4 += rev;
     }
 
     final values = [week4, week3, week2, week1];
@@ -325,7 +344,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -345,11 +364,22 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Total Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Total Sales',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       currency.format(totalSales),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.black87,
+                      ),
                     ),
                   ],
                 ),
@@ -362,7 +392,8 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
             runSpacing: 16,
             alignment: WrapAlignment.center,
             children: List.generate(4, (index) {
-              if (totalSales > 0 && values[index] == 0) return const SizedBox.shrink();
+              if (totalSales > 0 && values[index] == 0)
+                return const SizedBox.shrink();
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -377,7 +408,11 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
                   const SizedBox(width: 8),
                   Text(
                     labels[index],
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               );
@@ -393,7 +428,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
     if (topProducts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text('No product data yet.', style: TextStyle(color: Colors.grey)),
+        child: Text(
+          'No product data yet.',
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -408,14 +446,15 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: topProducts.length,
-        separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade100),
+        separatorBuilder: (context, index) =>
+            Divider(height: 1, color: Colors.grey.shade100),
         itemBuilder: (context, index) {
           final p = topProducts[index];
           final name = p['name'] ?? 'Unknown';
@@ -423,16 +462,28 @@ class _ReportAnalyticsState extends State<ReportAnalytics> with SingleTickerProv
           final rev = (p['revenue'] ?? 0).toDouble();
 
           return ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 8,
+            ),
             leading: CircleAvatar(
               backgroundColor: Colors.blue.shade50,
               child: Text(
                 '${index + 1}',
-                style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            subtitle: Text('Sold: $qty items', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+            title: Text(
+              name,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
+            subtitle: Text(
+              'Sold: $qty items',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
             trailing: Text(
               currency.format(rev),
               style: const TextStyle(
@@ -460,10 +511,10 @@ class DonutChartPainter extends CustomPainter {
 
     final strokeWidth = 26.0;
     final rect = Rect.fromLTWH(
-      strokeWidth / 2, 
-      strokeWidth / 2, 
-      size.width - strokeWidth, 
-      size.height - strokeWidth
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth,
+      size.height - strokeWidth,
     );
 
     // Subtle background track
@@ -483,7 +534,7 @@ class DonutChartPainter extends CustomPainter {
       if (values[i] == 0) continue;
 
       double sweepAngle = (values[i] / total) * 2 * pi;
-      
+
       final paint = Paint()
         ..color = colors[i % colors.length]
         ..style = PaintingStyle.stroke
@@ -492,8 +543,14 @@ class DonutChartPainter extends CustomPainter {
 
       // Draw the arc, ensuring sweepAngle minus gap isn't negative
       final drawSweep = max(0.01, sweepAngle - gapAngle);
-      canvas.drawArc(rect, startAngle + (gapAngle / 2), drawSweep, false, paint);
-      
+      canvas.drawArc(
+        rect,
+        startAngle + (gapAngle / 2),
+        drawSweep,
+        false,
+        paint,
+      );
+
       startAngle += sweepAngle;
     }
   }

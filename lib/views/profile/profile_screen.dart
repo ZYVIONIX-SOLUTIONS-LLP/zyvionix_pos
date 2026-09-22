@@ -22,8 +22,13 @@ import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
+import 'package:zyvionix_pos/widgets/language_selector_sheet.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:zyvionix_pos/controllers/theme_controller.dart';
+import 'package:zyvionix_pos/widgets/theme_selector_sheet.dart';
+import 'package:zyvionix_pos/views/settings/settings_screen.dart';
 import 'package:zyvionix_pos/views/hardware/hardware_store_screen.dart';
 import 'package:zyvionix_pos/views/hardware/hardware_orders_screen.dart';
 
@@ -60,6 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _showShopSelectionDialog(BuildContext context) async {
     showDialog(
       context: context,
@@ -170,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
 
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F6FA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 100),
@@ -179,13 +185,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildHeader(context),
                 const SizedBox(height: 24),
-                _buildSectionTitle('Account'),
+
+                // _buildSectionTitle('Account'),
+                _buildSectionTitle(context.tr('account')),
                 _buildMenuCard(
                   children: [
                     _buildMenuItem(
                       icon: Icons.receipt_long_rounded,
                       iconColor: Colors.deepPurple,
-                      title: 'Bill History',
+                      title: context.tr('bill_history'),
                       subtitle: 'View all your past bills',
                       onTap: () {
                         Navigator.push(
@@ -196,11 +204,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
+                    // _divider(),
+                    // Consumer<LanguageController>(
+                    //   builder: (context, langController, _) {
+                    //     return _buildMenuItem(
+                    //       icon: Icons.g_translate_rounded,
+                    //       iconColor: Colors.purple.shade600,
+                    //       title: context.tr('change_language'),
+                    //       subtitle:
+                    //           '${langController.currentLanguageFlag} ${langController.currentLanguageName}',
+                    //       onTap: () {
+                    //         LanguageSelectorSheet.show(context);
+                    //       },
+                    //     );
+                    //   },
+                    // ),
+                    _divider(),
+                    // Consumer<ThemeController>(
+                    //   builder: (context, themeController, _) {
+                    //     final isDark = themeController.isDarkMode;
+                    //     return _buildMenuItem(
+                    //       icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    //       iconColor: isDark ? Colors.deepPurpleAccent : Colors.amber.shade700,
+                    //       title: context.tr('app_theme'),
+                    //       subtitle: isDark ? context.tr('dark_mode') : context.tr('light_mode'),
+                    //       onTap: () {
+                    //         ThemeSelectorSheet.show(context);
+                    //       },
+                    //     );
+                    //   },
+                    // ),
+                    _divider(),
+                    _buildMenuItem(
+                      icon: Icons.settings_rounded,
+                      iconColor: Colors.blueGrey,
+                      title: context.tr('settings'),
+                      subtitle: 'App preferences & shop settings',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _divider(),
                     _buildMenuItem(
                       icon: Icons.notifications_active_rounded,
                       iconColor: Colors.amber,
-                      title: 'Notifications',
+                      title: context.tr('notifications'),
                       subtitle: 'View your alerts and updates',
                       onTap: () {
                         Navigator.push(
@@ -218,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.person_outline_rounded,
                         iconColor: Colors.blue,
-                        title: 'Edit Profile',
+                        title: context.tr('edit_profile'),
                         subtitle: 'Update your personal information',
                         onTap: () async {
                           final result = await Navigator.push(
@@ -237,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.cloud_circle_rounded,
                         iconColor: const Color(0xFF1EA1F2),
-                        title: 'Subscription Plans',
+                        title: context.tr('subscription_plans'),
                         subtitle: 'View and upgrade cloud plans',
                         onTap: () {
                           Navigator.push(
@@ -252,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.print_rounded,
                         iconColor: Colors.indigo,
-                        title: 'POS Store',
+                        title: context.tr('pos_store'),
                         subtitle: 'Printers, Scanners, Cash Drawers & Rolls',
                         onTap: () {
                           Navigator.push(
@@ -267,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.local_shipping_rounded,
                         iconColor: Colors.teal,
-                        title: 'My Orders',
+                        title: context.tr('my_orders'),
                         subtitle: 'Track status of ordered POS accessories',
                         onTap: () {
                           Navigator.push(
@@ -284,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildMenuItem(
                           icon: Icons.cloud_upload_rounded,
                           iconColor: Colors.blueAccent,
-                          title: 'Convert to Cloud',
+                          title: context.tr('convert_to_cloud'),
                           subtitle:
                               'Backup and sync all offline data to the cloud',
                           onTap: () {
@@ -298,7 +351,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.storefront_rounded,
                         iconColor: Colors.deepOrange,
-                        title: 'Manage Shops',
+                        title: context.tr('manage_shops'),
                         subtitle: 'View and manage your shops',
                         onTap: () {
                           Navigator.push(
@@ -317,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         icon: Icons.analytics_rounded,
                         iconColor: Colors.purple,
-                        title: 'Reports & Analytics',
+                        title: context.tr('reports_and_analytics'),
                         subtitle: 'View sales reports and business insights',
                         onTap: () {
                           Navigator.push(
@@ -328,48 +381,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-
-                      // _buildMenuItem(
-                      //   icon: Icons.storefront_rounded,
-                      //   iconColor: Colors.deepOrange,
-                      //   title: 'Manage Shops',
-                      //   subtitle: 'View and manage your shops',
-                      //   onTap: () {
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //         builder: (context) => const ManageShopsScreen(),
-                      //       ),
-                      //     ).then((_) {
-                      //       _refreshProfile();
-                      //     });
-                      //   },
-                      // ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Legal'),
+                _buildSectionTitle(context.tr('legal')),
                 _buildMenuCard(
                   children: [
                     _buildMenuItem(
                       icon: Icons.privacy_tip_outlined,
                       iconColor: Colors.teal,
-                      title: 'Privacy Policy',
+                      title: context.tr('privacy_policy'),
                       onTap: () {},
                     ),
                     _divider(),
                     _buildMenuItem(
                       icon: Icons.description_outlined,
                       iconColor: Colors.indigo,
-                      title: 'Terms & Conditions',
+                      title: context.tr('terms_conditions'),
                       onTap: () {},
                     ),
                     _divider(),
                     _buildMenuItem(
                       icon: Icons.help_outline_rounded,
                       iconColor: Colors.green,
-                      title: 'Help & Support',
+                      title: context.tr('help_support'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -386,7 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuItem(
                       icon: Icons.logout_rounded,
                       iconColor: Colors.redAccent,
-                      title: 'Logout',
+                      title: context.tr('logout'),
                       titleColor: Colors.redAccent,
                       showArrow: false,
                       onTap: () {
@@ -397,7 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuItem(
                       icon: Icons.delete_forever_rounded,
                       iconColor: Colors.red,
-                      title: 'Delete Account',
+                      title: context.tr('delete_account'),
                       titleColor: Colors.red,
                       showArrow: false,
                       onTap: () {
@@ -448,6 +484,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               defaultValue: '',
             );
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.only(
@@ -456,13 +493,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             left: 20,
             right: 20,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(28),
               bottomRight: Radius.circular(28),
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Color(0x11000000),
                 blurRadius: 12,
@@ -489,10 +526,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
                   Text(
                     companyName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1E1E),
+                      color: isDark ? Colors.white : const Color(0xFF1E1E1E),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -552,10 +589,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMenuCard({required List<Widget> children}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
@@ -578,6 +616,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool showArrow = true,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -588,7 +627,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 20),
@@ -603,7 +642,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
-                      color: titleColor ?? const Color(0xFF1E1E1E),
+                      color:
+                          titleColor ??
+                          (isDark ? Colors.white : const Color(0xFF1E1E1E)),
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -632,11 +673,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _divider() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Divider(
       height: 1,
       indent: 60,
       endIndent: 16,
-      color: Colors.grey.shade200,
+      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
     );
   }
 

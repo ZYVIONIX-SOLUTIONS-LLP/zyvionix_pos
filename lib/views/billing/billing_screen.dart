@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/products/product_list_screen.dart';
 import 'package:zyvionix_pos/views/products/add_edit_product_screen.dart';
@@ -44,17 +45,21 @@ class _BillingScreenState extends State<BillingScreen> {
   @override
   Widget build(BuildContext context) {
     final products = context.watch<ProductController>().products;
-    
+
     // Dynamically build categories
     final Set<String> uniqueCategories = {'All'};
     for (var p in products) {
-      final cat = (p.category?.isNotEmpty == true) ? p.category! : 'Uncategorized';
+      final cat = (p.category?.isNotEmpty == true)
+          ? p.category!
+          : 'Uncategorized';
       uniqueCategories.add(cat);
     }
     final categories = uniqueCategories.toList();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
@@ -76,28 +81,36 @@ class _BillingScreenState extends State<BillingScreen> {
                   });
                 },
               )
-            : const Text(
-                'Products',
+            : Text(
+                context.tr('products'),
                 style: TextStyle(
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
         centerTitle: !_isSearching,
         automaticallyImplyLeading: false,
         actions: [
           if (!_isEmployee)
             IconButton(
-              icon: const Icon(Icons.add_rounded, color: AppColors.primary, size: 28),
+              icon: const Icon(
+                Icons.add_rounded,
+                color: AppColors.primary,
+                size: 28,
+              ),
               tooltip: 'Add Product',
               onPressed: () async {
-                final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+                final canProceed = await SubscriptionHelper.checkAndEnforcePlan(
+                  context,
+                );
                 if (!canProceed) return;
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const AddEditProductScreen(),
+                  ),
                 );
               },
             ),
@@ -107,11 +120,14 @@ class _BillingScreenState extends State<BillingScreen> {
               tooltip: 'Edit Product',
               onPressed: () {
                 final selectedId = _selectedProductIds.first;
-                final selectedProduct = products.firstWhere((p) => p.id == selectedId);
+                final selectedProduct = products.firstWhere(
+                  (p) => p.id == selectedId,
+                );
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => AddEditProductScreen(product: selectedProduct),
+                    builder: (_) =>
+                        AddEditProductScreen(product: selectedProduct),
                   ),
                 );
               },
@@ -142,16 +158,22 @@ class _BillingScreenState extends State<BillingScreen> {
             ],
           ),
           if (_selectedProductIds.isNotEmpty)
-            Positioned(left: 0, right: 0, bottom: 25, child: _buildBottomBar(products)),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 25,
+              child: _buildBottomBar(products),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildCategories(List<String> categories) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 60,
-      color: Colors.white,
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -211,43 +233,52 @@ class _BillingScreenState extends State<BillingScreen> {
         final item = results[index];
         final isSelected = _selectedProductIds.contains(item.id);
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 0,
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           child: ListTile(
             contentPadding: const EdgeInsets.all(12.0),
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: item.imagePath != null
                   ? (item.imagePath!.startsWith('http')
-                      ? Image.network(
-                          item.imagePath!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                        ? Image.network(
+                            item.imagePath!,
                             width: 60,
                             height: 60,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.fastfood, color: Colors.grey),
-                          ),
-                        )
-                      : Image.file(
-                          File(item.imagePath!),
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.fastfood,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                          )
+                        : Image.file(
+                            File(item.imagePath!),
                             width: 60,
                             height: 60,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.fastfood, color: Colors.grey),
-                          ),
-                        ))
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.fastfood,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                          ))
                   : Container(
                       width: 60,
                       height: 60,
@@ -257,9 +288,9 @@ class _BillingScreenState extends State<BillingScreen> {
             ),
             title: Text(
               item.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
             subtitle: Padding(
@@ -294,7 +325,9 @@ class _BillingScreenState extends State<BillingScreen> {
     final filteredProducts = _selectedCategory == 'All'
         ? products
         : products.where((p) {
-            final cat = (p.category?.isNotEmpty == true) ? p.category! : 'Uncategorized';
+            final cat = (p.category?.isNotEmpty == true)
+                ? p.category!
+                : 'Uncategorized';
             return cat == _selectedCategory;
           }).toList();
 
@@ -320,6 +353,7 @@ class _BillingScreenState extends State<BillingScreen> {
         final item = filteredProducts[index];
         final isSelected = _selectedProductIds.contains(item.id);
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return InkWell(
           onTap: () {
             setState(() {
@@ -333,7 +367,7 @@ class _BillingScreenState extends State<BillingScreen> {
           borderRadius: BorderRadius.circular(0),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(0),
               border: Border.all(
                 color: isSelected ? AppColors.primary : Colors.transparent,
@@ -360,34 +394,36 @@ class _BillingScreenState extends State<BillingScreen> {
                         ),
                         child: item.imagePath != null
                             ? (item.imagePath!.startsWith('http')
-                                ? Image.network(
-                                    item.imagePath!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey.shade200,
-                                        child: const Icon(
-                                          Icons.fastfood,
-                                          color: Colors.grey,
-                                          size: 30,
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : Image.file(
-                                    File(item.imagePath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey.shade200,
-                                        child: const Icon(
-                                          Icons.fastfood,
-                                          color: Colors.grey,
-                                          size: 30,
-                                        ),
-                                      );
-                                    },
-                                  ))
+                                  ? Image.network(
+                                      item.imagePath!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey.shade200,
+                                              child: const Icon(
+                                                Icons.fastfood,
+                                                color: Colors.grey,
+                                                size: 30,
+                                              ),
+                                            );
+                                          },
+                                    )
+                                  : Image.file(
+                                      File(item.imagePath!),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey.shade200,
+                                              child: const Icon(
+                                                Icons.fastfood,
+                                                color: Colors.grey,
+                                                size: 30,
+                                              ),
+                                            );
+                                          },
+                                    ))
                             : Container(
                                 color: Colors.grey.shade200,
                                 child: const Icon(
@@ -407,10 +443,10 @@ class _BillingScreenState extends State<BillingScreen> {
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
-                              color: Colors.black87,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 2),

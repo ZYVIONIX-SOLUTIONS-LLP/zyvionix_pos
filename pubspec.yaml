@@ -39,6 +39,7 @@ dependencies:
   flutter_spinkit: ^5.2.2
   razorpay_flutter: ^1.4.6
   fl_chart: ^0.68.0
+  internet_connection_checker_plus: ^3.1.2
 
 dev_dependencies:
   flutter_test:
@@ -51,7 +52,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/companylogoimage.jpeg"
+  image_path: "assets/LogoPOS.png"
 
 flutter:
   uses-material-design: true
@@ -62,3 +63,4 @@ flutter:
     - assets/bannerimage.png
     - assets/billingsplash.png
     - assets/empty_search.json
+    - assets/LogoPOS.png

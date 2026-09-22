@@ -18,4 +18,19 @@ class ThemeController extends ChangeNotifier {
     _settingsBox.put('is_dark_mode', _isDarkMode);
     notifyListeners();
   }
+
+  void setDarkMode(bool isDark) {
+    if (_isDarkMode == isDark) return;
+    _isDarkMode = isDark;
+    _settingsBox.put('is_dark_mode', _isDarkMode);
+    notifyListeners();
+  }
+
+  void setLightMode() {
+    setDarkMode(false);
+  }
+
+  void setDarkModeOnly() {
+    setDarkMode(true);
+  }
 }

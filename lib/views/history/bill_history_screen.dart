@@ -2,6 +2,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/views/billing/bill_preview_screen.dart';
 import '../../controllers/bill_controller.dart';
 import '../../constants/app_theme.dart';
@@ -20,7 +21,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('All Bills')),
+      appBar: AppBar(title: Text(context.tr('all_bills'))),
       body: Column(
         children: [
           Padding(
@@ -43,22 +44,32 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
+                      dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E1E1E) : Colors.white,
                       value: _selectedFilter,
                       icon: const Icon(Icons.filter_list, size: 20),
-                      style: const TextStyle(fontSize: 14, color: Colors.black87),
-                      items: ['All Time', 'This Month', 'Last Month', 'This Year']
-                          .map((String value) => DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              ))
-                          .toList(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                      ),
+                      items:
+                          ['All Time', 'This Month', 'Last Month', 'This Year']
+                              .map(
+                                (String value) => DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (newValue) {
                         if (newValue != null) {
                           setState(() {
@@ -76,7 +87,12 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
             child: Consumer<BillController>(
               builder: (context, controller, child) {
                 if (controller.isLoading) {
-                  return const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0));
+                  return const Center(
+                    child: SpinKitFadingCircle(
+                      color: Color(0xFF1EA1F2),
+                      size: 50.0,
+                    ),
+                  );
                 }
 
                 if (controller.bills.isEmpty) {
@@ -87,10 +103,22 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
 
                 final now = DateTime.now();
                 if (_selectedFilter == 'This Month') {
-                  bills = bills.where((b) => b.date.month == now.month && b.date.year == now.year).toList();
+                  bills = bills
+                      .where(
+                        (b) =>
+                            b.date.month == now.month &&
+                            b.date.year == now.year,
+                      )
+                      .toList();
                 } else if (_selectedFilter == 'Last Month') {
                   final lastMonth = DateTime(now.year, now.month - 1);
-                  bills = bills.where((b) => b.date.month == lastMonth.month && b.date.year == lastMonth.year).toList();
+                  bills = bills
+                      .where(
+                        (b) =>
+                            b.date.month == lastMonth.month &&
+                            b.date.year == lastMonth.year,
+                      )
+                      .toList();
                 } else if (_selectedFilter == 'This Year') {
                   bills = bills.where((b) => b.date.year == now.year).toList();
                 }

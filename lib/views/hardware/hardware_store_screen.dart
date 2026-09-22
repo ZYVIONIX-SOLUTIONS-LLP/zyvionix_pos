@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/views/hardware/hardware_detail_screen.dart';
 import 'package:zyvionix_pos/views/hardware/hardware_orders_screen.dart';
 
@@ -104,10 +105,7 @@ class _HardwareStoreScreenState extends State<HardwareStoreScreen> {
           ? const Color(0xFF0F172A)
           : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'POS Hardware Store',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
+        title: Text(context.tr('pos_hardware_store')),
         elevation: 0,
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         actions: [

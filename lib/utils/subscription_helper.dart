@@ -7,11 +7,23 @@ class SubscriptionHelper {
   /// Returns true if the user can proceed, false if blocked.
   static Future<bool> checkAndEnforcePlan(BuildContext context) async {
     final box = HiveBoxes.getSettingsBox();
+
+    // Check planExpiryDate dynamically if present
+    final String? expiryStr = box.get('planExpiryDate');
+    if (expiryStr != null && expiryStr.isNotEmpty) {
+      final expiryDate = DateTime.tryParse(expiryStr);
+      if (expiryDate != null && DateTime.now().isAfter(expiryDate)) {
+        await box.put('hasActivePlan', false);
+      }
+    }
+
     final bool hasActivePlan = box.get('hasActivePlan', defaultValue: false);
 
     if (hasActivePlan) {
       return true;
     }
+
+    if (!context.mounted) return false;
 
     final String userId = box.get('user_id', defaultValue: '');
     final String userToken = box.get('auth_token', defaultValue: '');

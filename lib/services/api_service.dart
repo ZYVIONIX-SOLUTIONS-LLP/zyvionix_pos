@@ -346,9 +346,17 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic> && data.containsKey('isNewUser')) {
+        if (data is Map<String, dynamic>) {
           final box = HiveBoxes.getSettingsBox();
-          await box.put('is_new_user', data['isNewUser'] == true);
+          if (data.containsKey('isNewUser')) {
+            await box.put('is_new_user', data['isNewUser'] == true);
+          }
+          if (data.containsKey('hasActivePlan')) {
+            await box.put('hasActivePlan', data['hasActivePlan'] == true);
+          }
+          if (data.containsKey('planExpiryDate') && data['planExpiryDate'] != null) {
+            await box.put('planExpiryDate', data['planExpiryDate'].toString());
+          }
         }
         return data;
       }

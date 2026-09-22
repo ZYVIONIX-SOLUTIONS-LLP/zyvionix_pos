@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 
 class SubscriptionLockScreen extends StatefulWidget {
@@ -26,8 +25,8 @@ class SubscriptionLockScreen extends StatefulWidget {
 class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
   List<dynamic> plans = [];
   bool isLoading = true;
+  int _selectedIndex = 0;
   late Razorpay _razorpay;
-  int _currentPage = 0;
 
   @override
   void initState() {
@@ -47,7 +46,6 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
 
   Future<void> _fetchPlans() async {
     try {
-      // Fetch Profile to get current plan
       String? currentPlanId;
       try {
         final profileRes = await http.get(
@@ -72,7 +70,6 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
         final data = jsonDecode(response.body);
         final allPlans = data['data'] ?? [];
 
-        // Filter out Base/Silver plan (isDefaultTrial == true), the user's current plan, and Inactive plans
         setState(() {
           plans = allPlans
               .where(
@@ -98,10 +95,11 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+        builder: (ctx) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFFF5C443)),
+        ),
       );
 
-      // Create Order in Backend
       final orderRes = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/payments/create-order'),
         headers: {
@@ -121,11 +119,12 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
         var options = {
           'key': widget.razorpayKeyId,
           'amount': (amount * 100).toInt(),
-          'name': 'POS Billing App',
+          'name': 'Zyvionix POS Billing',
           'order_id': orderId,
           'description': 'Subscription Plan Purchase',
           'timeout': 180,
           'prefill': {'contact': '', 'email': ''},
+          'theme': {'color': '#F5C443'},
         };
 
         _razorpay.open(options);
@@ -148,13 +147,17 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => const AlertDialog(
-        title: Text('Verifying Payment'),
+        backgroundColor: Color(0xFF1E1E22),
+        title: Text('Verifying Payment', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Please wait while we verify your transaction...'),
+            Text(
+              'Please wait while we verify your transaction...',
+              style: TextStyle(color: Colors.grey),
+            ),
             SizedBox(height: 16),
-            CircularProgressIndicator(),
+            CircularProgressIndicator(color: Color(0xFFF5C443)),
           ],
         ),
       ),
@@ -174,20 +177,17 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
         }),
       );
 
-      if (mounted) Navigator.pop(context); // Pop verifying dialog
+      if (mounted) Navigator.pop(context);
 
       if (verifyRes.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment Successful! Plan Upgraded.'),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF10B981),
           ),
         );
         if (mounted) {
-          Navigator.pop(
-            context,
-            true,
-          ); // Pop lock screen returning true (success)
+          Navigator.pop(context, true);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +198,7 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
         );
       }
     } catch (e) {
-      if (mounted) Navigator.pop(context); // Pop dialog
+      if (mounted) Navigator.pop(context);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Verification error: $e')));
@@ -215,245 +215,415 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !widget.isExpired, // Lock if expired
+    return PopScope(
+      canPop: !widget.isExpired,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FC),
-        appBar: AppBar(
-          title: Text(
-            widget.isExpired ? 'Active Plan Required' : 'Upgrade Plan',
-          ),
-          automaticallyImplyLeading: !widget.isExpired,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          foregroundColor: Colors.black87,
-        ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+        backgroundColor: const Color(0xFF0D0D0E),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // Bottom decorative leaf icon watermark (matching screenshot aesthetic)
+              Positioned(
+                bottom: -50,
+                right: -40,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.12,
+                    child: Icon(
+                      Icons.eco_rounded,
+                      size: 290,
+                      color: const Color(0xFF4ADE80),
+                    ),
+                  ),
+                ),
+              ),
+
+              Column(
                 children: [
-                  if (widget.isExpired) ...[
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.lock_clock_outlined,
-                            size: 48,
-                            color: Colors.orange,
+                  // Top Bar (Close Icon & Restore Purchases)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (!widget.isExpired) {
+                              Navigator.pop(context);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please select a plan to unlock full POS features.',
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 28,
                           ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Access Restricted',
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            _fetchPlans();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Restoring plan list...'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.sync_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Restore Purchases',
                             style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Your subscription plan has expired. Please upgrade your plan to continue using the application.',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Main Scrollable Area
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          // Header Title & Subtitle
+                          const Text(
+                            'Choose a Plan',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
                           ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'No commitment. Cancel anytime.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF8E8E93),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // Bullet Features List
+                          _buildFeatureItem(
+                            icon: Icons.check_rounded,
+                            iconColor: const Color(0xFF4ADE80),
+                            text: 'Unlimited Invoices & Products',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildFeatureItem(
+                            icon: Icons.location_on_rounded,
+                            iconColor: const Color(0xFFF5C443),
+                            text: 'Multi-Shop & Cloud Auto-Sync',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildFeatureItem(
+                            icon: Icons.bar_chart_rounded,
+                            iconColor: const Color(0xFF38BDF8),
+                            text: 'Advanced Reports & Analytics',
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Dynamic Plans Cards
+                          if (isLoading)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFF5C443),
+                              ),
+                            )
+                          else if (plans.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 30),
+                              child: Text(
+                                'No subscription plans available at the moment.',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          else
+                            ...List.generate(plans.length, (index) {
+                              final plan = plans[index];
+                              final isSelected = _selectedIndex == index;
+                              final isPopular =
+                                  index == 0 ||
+                                  plan['planName']
+                                      .toString()
+                                      .toLowerCase()
+                                      .contains('gold') ||
+                                  plan['planName']
+                                      .toString()
+                                      .toLowerCase()
+                                      .contains('popular');
+
+                              return _buildPlanCard(
+                                plan: plan,
+                                isSelected: isSelected,
+                                isPopular: isPopular,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedIndex = index;
+                                  });
+                                },
+                              );
+                            }),
+
+                          const SizedBox(height: 8),
+                          if (plans.isNotEmpty)
+                            Text(
+                              '* Percentage off the regular monthly subscription cost',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 12,
+                              ),
+                            ),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
-                  ],
-                  if (!widget.isExpired) ...[
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        'Unlock unlimited features by upgrading your plan!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                  Expanded(
-                    child: plans.isEmpty
-                        ? const Center(child: Text("No plans available."))
-                        : PageView.builder(
-                            itemCount: plans.length,
-                            controller: PageController(viewportFraction: 0.85),
-                            onPageChanged: (index) {
-                              setState(() {
-                                _currentPage = index;
-                              });
-                            },
-                            itemBuilder: (context, index) {
-                              final plan = plans[index];
-                              final isGold = plan['planName']
-                                  .toString()
-                                  .toLowerCase()
-                                  .contains('gold');
-                              return _buildPlanCard(plan, isGold);
-                            },
-                          ),
                   ),
-                  const SizedBox(height: 16),
-                  if (plans.isNotEmpty)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        plans.length,
-                        (index) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _currentPage == index ? 12 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _currentPage == index
-                                ? const Color(0xFF1EA1F2)
-                                : Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(4),
+
+                  // Bottom Action CTA Button & Terms Disclaimer
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: (isLoading || plans.isEmpty)
+                                ? null
+                                : () {
+                                    if (_selectedIndex < plans.length) {
+                                      final selectedPlan =
+                                          plans[_selectedIndex];
+                                      _initiatePurchase(selectedPlan);
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF5C443),
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              widget.isExpired
+                                  ? 'Start Plan with Trial'
+                                  : 'Upgrade Selected Plan',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Subscription renews automatically until you turn it off. You can cancel your subscription or trial anytime by managing your account settings.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF7C7C80),
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
-                  const SizedBox(height: 32),
+                  ),
                 ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildPlanCard(Map<String, dynamic> plan, bool isHighlighted) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isHighlighted ? const Color(0xFFFFF9E6) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isHighlighted ? Colors.amber.shade400 : Colors.grey.shade200,
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isHighlighted
-                ? Colors.amber.withOpacity(0.2)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isHighlighted)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'RECOMMENDED',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          if (isHighlighted) const SizedBox(height: 12),
-          Text(
-            plan['planName'] ?? 'Plan',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            plan['description'] ?? '',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '₹${plan['price']}',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
-                child: Text(
-                  '/ ${plan['durationType']}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          // Features list
-          _buildFeatureRow(
-            Icons.storefront,
-            plan['maxShops'] == 0
-                ? 'Unlimited Shops'
-                : '${plan['maxShops']} Shop(s)',
-          ),
-          const SizedBox(height: 12),
-          _buildFeatureRow(
-            Icons.people_outline,
-            plan['maxEmployees'] == 0
-                ? 'Unlimited Employees'
-                : '${plan['maxEmployees']} Employee(s)',
-          ),
-          const SizedBox(height: 12),
-          // _buildFeatureRow(Icons.cloud_done_outlined, 'Cloud Auto-Backup'),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: () => _initiatePurchase(plan),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isHighlighted
-                    ? Colors.amber.shade600
-                    : const Color(0xFF1EA1F2),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                widget.isExpired ? 'Subscribe Now' : 'Upgrade Now',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String text) {
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+  }) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: const Color(0xFF1EA1F2)),
-        const SizedBox(width: 12),
+        Icon(icon, size: 22, color: iconColor),
+        const SizedBox(width: 14),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 15, color: Colors.black87),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildPlanCard({
+    required Map<String, dynamic> plan,
+    required bool isSelected,
+    required bool isPopular,
+    required VoidCallback onTap,
+  }) {
+    final planName = plan['planName'] ?? 'Popular Plan';
+    final price = plan['price'] ?? 0;
+    final duration = plan['durationType'] ?? 'month';
+    final trialDays = plan['duration'] ?? 7;
+
+    String priceSubtitle = '₹$price / $duration';
+    if (isPopular) {
+      priceSubtitle = '₹$price / $duration after $trialDays-day trial';
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(top: isPopular ? 10 : 0, bottom: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            decoration: BoxDecoration(
+              color: isPopular
+                  ? const Color(0xFF1E1E22)
+                  : const Color(0xFF26262A),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFFF5C443)
+                    : const Color(0xFF3A3A3C),
+                width: isSelected ? 2 : 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFF5C443).withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        planName,
+                        style: TextStyle(
+                          color: isPopular
+                              ? const Color(0xFFF5C443)
+                              : Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        priceSubtitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Circle Checkmark Selection Radio
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? const Color(0xFFF5C443)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFF5C443)
+                          : const Color(0xFF636366),
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check_rounded,
+                          size: 18,
+                          color: Colors.black,
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // if (isPopular)
+        //   Positioned(
+        //     top: 0,
+        //     left: 0,
+        //     right: 0,
+        //     child: Center(
+        //       child: Container(
+        //         padding: const EdgeInsets.symmetric(
+        //           horizontal: 14,
+        //           vertical: 3,
+        //         ),
+        //         decoration: BoxDecoration(
+        //           color: const Color(0xFFF5C443),
+        //           borderRadius: BorderRadius.circular(12),
+        //         ),
+        //         child: const Text(
+        //           'Save 59%',
+        //           style: TextStyle(
+        //             color: Colors.black,
+        //             fontSize: 11,
+        //             fontWeight: FontWeight.bold,
+        //           ),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }

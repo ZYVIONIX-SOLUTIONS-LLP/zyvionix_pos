@@ -1,6 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/views/settings/upgrade_plan_screen.dart';
 import 'package:zyvionix_pos/widgets/primary_button.dart';
@@ -39,17 +40,19 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Subscription Plan',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
+        title: Text(context.tr('subscription_plan')),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+            ? const Center(
+                child: SpinKitFadingCircle(
+                  color: Color(0xFF1EA1F2),
+                  size: 50.0,
+                ),
+              )
             : _buildContent(),
       ),
     );
@@ -83,7 +86,8 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const UpgradePlanScreen(isSyncRequired: false),
+                      builder: (context) =>
+                          const UpgradePlanScreen(isSyncRequired: false),
                     ),
                   );
                 },
@@ -139,14 +143,21 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'Cloud Sync Enabled',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -163,10 +174,7 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                 const SizedBox(height: 8),
                 Text(
                   plan['description'] ?? 'All features unlocked',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
                 const Divider(color: Colors.white24),
@@ -183,7 +191,9 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          expiryDate != null ? DateFormat('MMM dd, yyyy').format(expiryDate) : 'N/A',
+                          expiryDate != null
+                              ? DateFormat('MMM dd, yyyy').format(expiryDate)
+                              : 'N/A',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -225,20 +235,34 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Color(0xFF1C64F2)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const UpgradePlanScreen(isSyncRequired: false),
+                  builder: (context) =>
+                      const UpgradePlanScreen(isSyncRequired: false),
                 ),
               );
             },
-            child: const Text(
-              'Browse Other Plans',
-              style: TextStyle(color: Color(0xFF1C64F2), fontWeight: FontWeight.bold),
+
+            // child: const Text(
+            //   'Browse Other Plans',
+            //   style: TextStyle(
+            //     color: Color(0xFF1C64F2),
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            child: Text(
+              context.tr('browse_other_plans'),
+              style: const TextStyle(
+                color: Color(0xFF1C64F2),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

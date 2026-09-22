@@ -1,5 +1,6 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 import 'package:zyvionix_pos/widgets/custom_text_field.dart';
@@ -67,19 +68,16 @@ class _EditProfileState extends State<EditProfile> {
       'mobileNumber': _phoneController.text.trim(),
     };
 
-    // Always attempt to update the backend profile since all users are in MongoDB
     success = await ApiService.updateProfile(data);
 
     if (success || storageType == 'Device Storage') {
-      // Update local storage so that offline components reflect the new profile
       await _box.put('offline_email', _emailController.text.trim());
       await _box.put('offline_mobile', _phoneController.text.trim());
       await _box.put('user_email', _emailController.text.trim());
       await _box.put('user_phone', _phoneController.text.trim());
 
       if (storageType == 'Device Storage') {
-        success =
-            true; // In device storage, we consider local update a success even if API fails (offline)
+        success = true;
       }
     }
 
@@ -124,10 +122,7 @@ class _EditProfileState extends State<EditProfile> {
           },
           icon: Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
+        title: Text(context.tr('edit_profile')),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
@@ -155,7 +150,10 @@ class _EditProfileState extends State<EditProfile> {
                     ? const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40),
-                          child: SpinKitThreeBounce(color: Colors.white, size: 20.0),
+                          child: SpinKitThreeBounce(
+                            color: Colors.white,
+                            size: 20.0,
+                          ),
                         ),
                       )
                     : Column(
@@ -180,8 +178,14 @@ class _EditProfileState extends State<EditProfile> {
                       ),
               ),
               const SizedBox(height: 32),
+
+              // PrimaryButton(
+              //   text: 'Save Changes',
+              //   onPressed: _saveProfile,
+              //   isLoading: _isSaving,
+              // ),
               PrimaryButton(
-                text: 'Save Changes',
+                text: context.tr('save_changes'),
                 onPressed: _saveProfile,
                 isLoading: _isSaving,
               ),

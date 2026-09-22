@@ -7,6 +7,7 @@ import 'package:zyvionix_pos/views/home_screen.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
 import 'package:zyvionix_pos/views/profile/profile_screen.dart';
 import 'package:zyvionix_pos/widgets/subscription_modal.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 
 class NavbarScreen extends StatefulWidget {
   const NavbarScreen({super.key});
@@ -59,8 +60,10 @@ class _NavbarScreenState extends State<NavbarScreen> {
     final currentIndex = navProvider.currentIndex;
     final bool showNavBar = currentIndex != 1;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
       body: _pages[currentIndex],
       floatingActionButton: showNavBar
@@ -78,47 +81,55 @@ class _NavbarScreenState extends State<NavbarScreen> {
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: showNavBar
-          ? BottomAppBar(
-              color: Colors.white,
-              shape: const CircularNotchedRectangle(),
-              notchMargin: 10.0,
-              elevation: 16,
-              shadowColor: Colors.black45,
-              child: SizedBox(
-                height: 65,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildNavItem(
-                      icon: _isEmployee ? Icons.history_rounded : Icons.home_rounded,
-                      label: _isEmployee ? 'History' : 'Home',
-                      isSelected: currentIndex == 0,
-                      onTap: () => navProvider.setIndex(0),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.end,
+          ? Consumer<LanguageController>(
+              builder: (context, langController, _) {
+                return BottomAppBar(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  shape: const CircularNotchedRectangle(),
+                  notchMargin: 10.0,
+                  elevation: 16,
+                  shadowColor: isDark ? Colors.black : Colors.black45,
+                  child: SizedBox(
+                    height: 65,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        const SizedBox(height: 28),
-                        Text(
-                          'New Bill',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
+                        _buildNavItem(
+                          icon: _isEmployee
+                              ? Icons.history_rounded
+                              : Icons.home_rounded,
+                          label: _isEmployee
+                              ? context.tr('history')
+                              : context.tr('home'),
+                          isSelected: currentIndex == 0,
+                          onTap: () => navProvider.setIndex(0),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const SizedBox(height: 28),
+                            Text(
+                              context.tr('new_bill'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        _buildNavItem(
+                          icon: Icons.menu_rounded,
+                          label: context.tr('menu'),
+                          isSelected: currentIndex == 2,
+                          onTap: () => navProvider.setIndex(2),
                         ),
                       ],
                     ),
-                    _buildNavItem(
-                      icon: Icons.menu_rounded,
-                      label: 'Menu',
-                      isSelected: currentIndex == 2,
-                      onTap: () => navProvider.setIndex(2),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             )
           : null,
     );

@@ -4,6 +4,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/product.dart';
 import '../../widgets/custom_text_field.dart';
@@ -95,9 +96,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
     showTopSnackBar(
       Overlay.of(context),
-      CustomSnackBar.success(
-        message: message,
-      ),
+      CustomSnackBar.success(message: message),
       displayDuration: const Duration(seconds: 2),
     );
 
@@ -113,7 +112,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     final isEditing = widget.product != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Edit Item' : 'Add Item')),
+      // appBar: AppBar(title: Text(isEditing ? 'Edit Item' : 'Add Item')),
+      appBar: AppBar(
+        title: Text(
+          isEditing ? context.tr('edit_item') : context.tr('add_item'),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -140,7 +144,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           : null,
                     ),
                     child: _imagePath == null
-                        ? const Column(
+                        ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
@@ -150,8 +154,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                'Add Photo',
-                                style: TextStyle(color: Colors.grey),
+                                context.tr('add_photo'),
+                                style: const TextStyle(color: Colors.grey),
                               ),
                             ],
                           )
@@ -161,8 +165,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 24),
               CustomTextField(
-                label: 'Item Name',
-                hint: 'Enter item name',
+                // label: 'Item Name',
+                // hint: 'Enter item name',
+                label: context.tr('item_name'),
+                hint: context.tr('enter_item_name'),
                 controller: _nameController,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -172,8 +178,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 },
               ),
               CustomTextField(
-                label: 'Price (₹)',
-                hint: 'Enter price',
+                // label: 'Price (₹)',
+                // hint: 'Enter price',
+                label: context.tr('price_rupee'),
+                hint: context.tr('enter_price'),
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -191,14 +199,22 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 },
               ),
               CustomTextField(
+                // label: 'Category (Optional)',
+                // hint: 'e.g. Food, Drinks',
                 label: 'Category (Optional)',
                 hint: 'e.g. Food, Drinks',
                 controller: _categoryController,
               ),
               const SizedBox(height: 24),
 
+              // PrimaryButton(
+              //   text: isEditing ? 'Update Product' : 'Save Product',
+              //   onPressed: _saveProduct,
+              // ),
               PrimaryButton(
-                text: isEditing ? 'Update Product' : 'Save Product',
+                text: isEditing
+                    ? context.tr('update_product')
+                    : context.tr('save_product'),
                 onPressed: _saveProduct,
               ),
             ],

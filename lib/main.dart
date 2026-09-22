@@ -8,6 +8,7 @@ import 'package:zyvionix_pos/views/auth/login_screen.dart';
 import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
 import 'constants/app_theme.dart';
 import 'database/hive_boxes.dart';
+import 'controllers/language_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/bill_controller.dart';
 import 'controllers/theme_controller.dart';
@@ -17,26 +18,15 @@ import 'views/firebase/firebase_service.dart';
 import 'views/firebase/local_notification_service.dart';
 import 'services/maintenance_service.dart';
 import 'services/socket_service.dart';
+import 'services/network_service.dart';
+import 'widgets/offline_overlay.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
-Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp();
-  }
-
-  print('🔔 Background message received!');
-  print('📌 Message ID: ${message.messageId}');
-  print('📦 Data payload: ${message.data}');
-  print('🕐 Sent time: ${message.sentTime}');
-
-  if (message.notification != null) {
-    print('📣 Title: ${message.notification!.title}');
-    print('📣 Body: ${message.notification!.body}');
-  } else {
-    print('⚠️ Data-only message');
-  }
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling background message: ${message.messageId}");
 }
 
 void main() async {
@@ -44,7 +34,7 @@ void main() async {
 
   try {
     await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await LocalNotificationService.init();
     await FCMService().initialize();
 
@@ -59,9 +49,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => NetworkController()),
         ChangeNotifierProvider(create: (_) => ProductController()),
         ChangeNotifierProvider(create: (_) => BillController()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
+        ChangeNotifierProvider(create: (_) => LanguageController()),
         ChangeNotifierProvider(create: (_) => BottomNavbarProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
@@ -101,17 +93,18 @@ class _ZyvionixPosAppState extends State<ZyvionixPosApp>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeController>(
-      builder: (context, themeController, _) {
+    return Consumer2<ThemeController, LanguageController>(
+      builder: (context, themeController, languageController, _) {
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Zyvionix POS',
+          title: languageController.tr('app_title'),
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeController.isDarkMode
               ? ThemeMode.dark
               : ThemeMode.light,
+          builder: (context, child) => OfflineOverlayWrapper(child: child!),
           home: const AppStartupHandler(),
         );
       },

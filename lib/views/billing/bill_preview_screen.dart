@@ -154,6 +154,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import '../../models/bill.dart';
 import '../../services/pdf_service.dart';
 import '../../services/printer_service.dart';
@@ -310,7 +311,8 @@ class _BillPreviewScreenState extends State<BillPreviewScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE9EBEE),
       appBar: AppBar(
-        title: const Text('Bill Preview'),
+        // title: const Text('Bill Preview'),
+        title: Text(context.tr('bill_preview')),
         actions: [
           IconButton(
             tooltip: 'Share',
