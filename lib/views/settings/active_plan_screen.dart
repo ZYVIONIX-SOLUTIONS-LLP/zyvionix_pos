@@ -249,14 +249,6 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                 ),
               );
             },
-
-            // child: const Text(
-            //   'Browse Other Plans',
-            //   style: TextStyle(
-            //     color: Color(0xFF1C64F2),
-            //     fontWeight: FontWeight.bold,
-            //   ),
-            // ),
             child: Text(
               context.tr('browse_other_plans'),
               style: const TextStyle(
