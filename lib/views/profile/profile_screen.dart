@@ -152,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      Navigator.pop(context); // close loading
+      Navigator.pop(context);
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
@@ -204,21 +204,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
-                    // _divider(),
-                    // Consumer<LanguageController>(
-                    //   builder: (context, langController, _) {
-                    //     return _buildMenuItem(
-                    //       icon: Icons.g_translate_rounded,
-                    //       iconColor: Colors.purple.shade600,
-                    //       title: context.tr('change_language'),
-                    //       subtitle:
-                    //           '${langController.currentLanguageFlag} ${langController.currentLanguageName}',
-                    //       onTap: () {
-                    //         LanguageSelectorSheet.show(context);
-                    //       },
-                    //     );
-                    //   },
-                    // ),
+                    _divider(),
+                    Consumer<LanguageController>(
+                      builder: (context, langController, _) {
+                        return _buildMenuItem(
+                          icon: Icons.g_translate_rounded,
+                          iconColor: Colors.purple.shade600,
+                          title: context.tr('change_language'),
+                          subtitle:
+                              '${langController.currentLanguageFlag} ${langController.currentLanguageName}',
+                          onTap: () {
+                            LanguageSelectorSheet.show(context);
+                          },
+                        );
+                      },
+                    ),
                     _divider(),
                     // Consumer<ThemeController>(
                     //   builder: (context, themeController, _) {
@@ -416,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Session'),
+                _buildSectionTitle(context.tr('session')),
                 _buildMenuCard(
                   children: [
                     _buildMenuItem(

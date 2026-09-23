@@ -1,6 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/models/shop.dart';
 import 'package:http/http.dart' as http;
@@ -46,78 +47,78 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
 
     final box = HiveBoxes.getSettingsBox();
     final shopName = _nameController.text.trim();
-      // Save to Cloud via API
-      try {
-        final token = box.get('auth_token');
-        final response = await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/shops'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'name': shopName,
-            'address': _addressController.text.trim(),
-            'mobile': _mobileController.text.trim(),
-            'gst': _gstController.text.trim(),
-            'email': _emailController.text.trim(),
-          }),
+    // Save to Cloud via API
+    try {
+      final token = box.get('auth_token');
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/shops'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': shopName,
+          'address': _addressController.text.trim(),
+          'mobile': _mobileController.text.trim(),
+          'gst': _gstController.text.trim(),
+          'email': _emailController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final newShopId = data['shop']['_id'];
+
+        await box.put('current_shop_id', newShopId);
+        await box.put('shop_id', newShopId);
+        await box.put('shop_name', shopName);
+        await box.put(
+          'offline_company_address',
+          _addressController.text.trim(),
         );
+        await box.put('shop_mobile', _mobileController.text.trim());
 
-        if (response.statusCode == 201) {
-          final data = jsonDecode(response.body);
-          final newShopId = data['shop']['_id'];
+        setState(() {
+          _isLoading = false;
+        });
 
-          await box.put('current_shop_id', newShopId);
-          await box.put('shop_id', newShopId);
-          await box.put('shop_name', shopName);
-          await box.put(
-            'offline_company_address',
-            _addressController.text.trim(),
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Shop created on Cloud!'),
+              backgroundColor: Colors.green,
+            ),
           );
-          await box.put('shop_mobile', _mobileController.text.trim());
-
-          setState(() {
-            _isLoading = false;
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Shop created on Cloud!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pop(context, true);
-          }
-        } else {
-          final data = jsonDecode(response.body);
-          setState(() {
-            _isLoading = false;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data['message'] ?? 'Failed to create shop'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+          Navigator.pop(context, true);
         }
-      } catch (e) {
+      } else {
+        final data = jsonDecode(response.body);
         setState(() {
           _isLoading = false;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Network error.'),
+            SnackBar(
+              content: Text(data['message'] ?? 'Failed to create shop'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -175,7 +176,9 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back_ios_new),
                 ),
-          title: const Text('Create Shop'),
+
+          // title: const Text('Create Shop'),
+          title: Text(context.tr('create_shop')),
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
@@ -201,36 +204,41 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                   ],
                   _buildTextField(
                     controller: _nameController,
-                    label: 'Shop Name',
+                    label: context.tr('shop_name'),
                     icon: Icons.store,
                   ),
                   _buildTextField(
                     controller: _addressController,
-                    label: 'Address',
+                    label: context.tr('shop_address'),
                     icon: Icons.location_on,
                   ),
                   _buildTextField(
                     controller: _mobileController,
-                    label: 'Shop Mobile Number',
+                    label: context.tr('shop_mobile_number'),
                     icon: Icons.phone,
                     keyboardType: TextInputType.phone,
                   ),
                   _buildTextField(
                     controller: _gstController,
-                    label: 'GST Number',
+                    label: context.tr('gst_number'),
                     icon: Icons.receipt_long,
                     isOptional: true,
                   ),
                   _buildTextField(
                     controller: _emailController,
-                    label: 'Shop Email',
+                    label: context.tr('shop_email'),
                     icon: Icons.email,
                     isOptional: true,
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 24),
                   if (_isLoading)
-                    const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+                    const Center(
+                      child: SpinKitFadingCircle(
+                        color: Color(0xFF1EA1F2),
+                        size: 50.0,
+                      ),
+                    )
                   else
                     ElevatedButton(
                       onPressed: _createShop,
@@ -242,9 +250,9 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Save Shop',
-                        style: TextStyle(
+                      child: Text(
+                        context.tr('save_shop'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),

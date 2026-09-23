@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/models/bill.dart';
 import 'package:zyvionix_pos/views/billing/bill_preview_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
+
 class BillHystory extends StatefulWidget {
   const BillHystory({super.key});
 
@@ -32,9 +34,12 @@ class _BillHystoryState extends State<BillHystory> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Bill History',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        title: Text(
+          context.tr('bill_history'),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -57,10 +62,16 @@ class _BillHystoryState extends State<BillHystory> {
                 decoration: InputDecoration(
                   hintText: "Search by Bill #...",
                   hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Colors.blue),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: Colors.blue,
+                  ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, color: Colors.grey),
+                          icon: const Icon(
+                            Icons.clear_rounded,
+                            color: Colors.grey,
+                          ),
                           onPressed: () {
                             setState(() {
                               _searchController.clear();
@@ -79,7 +90,7 @@ class _BillHystoryState extends State<BillHystory> {
                 ),
               ),
             ),
-            
+
             // Bills List
             Expanded(
               child: Consumer<BillController>(
@@ -93,10 +104,14 @@ class _BillHystoryState extends State<BillHystory> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.receipt_long_rounded, size: 64, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
                           const SizedBox(height: 12),
                           Text(
-                            "No bills generated yet",
+                            context.tr('no_bills_generated_yet'),
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey.shade600,
@@ -113,16 +128,24 @@ class _BillHystoryState extends State<BillHystory> {
 
                   // Filter by search query
                   if (_searchQuery.isNotEmpty) {
-                    bills = bills.where((bill) => 
-                      bill.billNumber.toString().toLowerCase().contains(_searchQuery)
-                    ).toList();
+                    bills = bills
+                        .where(
+                          (bill) => bill.billNumber
+                              .toString()
+                              .toLowerCase()
+                              .contains(_searchQuery),
+                        )
+                        .toList();
                   }
 
                   if (bills.isEmpty) {
                     return Center(
                       child: Text(
                         "No bills found",
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
                       ),
                     );
                   }
@@ -164,7 +187,11 @@ class _BillHystoryState extends State<BillHystory> {
                                   color: Colors.blue.shade50,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.receipt_long, color: Colors.blue.shade700, size: 22),
+                                child: Icon(
+                                  Icons.receipt_long,
+                                  color: Colors.blue.shade700,
+                                  size: 22,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -181,7 +208,9 @@ class _BillHystoryState extends State<BillHystory> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      DateFormat('dd MMM yyyy, hh:mm a').format(bill.date),
+                                      DateFormat(
+                                        'dd MMM yyyy, hh:mm a',
+                                      ).format(bill.date),
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: Colors.black54,
@@ -203,7 +232,10 @@ class _BillHystoryState extends State<BillHystory> {
                                   ),
                                   const SizedBox(height: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade50,
                                       borderRadius: BorderRadius.circular(6),
@@ -220,7 +252,10 @@ class _BillHystoryState extends State<BillHystory> {
                                 ],
                               ),
                               const SizedBox(width: 12),
-                              const Icon(Icons.chevron_right, color: Colors.black26),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Colors.black26,
+                              ),
                             ],
                           ),
                         ),

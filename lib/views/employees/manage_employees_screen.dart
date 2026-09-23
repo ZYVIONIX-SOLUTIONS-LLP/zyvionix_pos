@@ -1,6 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:http/http.dart' as http;
@@ -62,9 +63,17 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Manage Employees',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+
+        // title: const Text(
+        //   'Manage Employees',
+        //   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        // ),
+        title: Text(
+          context.tr('manage_employees'),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -72,7 +81,12 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+            ? const Center(
+                child: SpinKitFadingCircle(
+                  color: Color(0xFF1EA1F2),
+                  size: 50.0,
+                ),
+              )
             : _buildContent(),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -91,9 +105,17 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
         },
         backgroundColor: const Color(0xFF1EA1F2),
         icon: const Icon(Icons.person_add, color: Colors.white),
-        label: const Text(
-          'Add Employee',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+
+        // label: const Text(
+        //   'Add Employee',
+        //   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        // ),
+        label: Text(
+          context.tr('add_employee'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -107,9 +129,14 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
           children: [
             Icon(Icons.people_outline, size: 80, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            const Text(
-              'No Employees Found',
-              style: TextStyle(fontSize: 18, color: Colors.black54),
+
+            // const Text(
+            //   'No Employees Found',
+            //   style: TextStyle(fontSize: 18, color: Colors.black54),
+            // ),
+            Text(
+              context.tr('no_employees_found'),
+              style: const TextStyle(fontSize: 18, color: Colors.black54),
             ),
           ],
         ),

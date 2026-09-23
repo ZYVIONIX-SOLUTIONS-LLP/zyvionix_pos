@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/utils/subscription_helper.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/bill_controller.dart';
@@ -15,7 +16,10 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            final billController = Provider.of<BillController>(context, listen: false);
+            final billController = Provider.of<BillController>(
+              context,
+              listen: false,
+            );
             if (billController.editingBill != null) {
               billController.clearCart();
             }
@@ -23,9 +27,12 @@ class CartScreen extends StatelessWidget {
           },
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Your Cart',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        title: Text(
+          context.tr('your_cart'),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -34,11 +41,15 @@ class CartScreen extends StatelessWidget {
       body: Consumer<BillController>(
         builder: (context, controller, child) {
           if (controller.cart.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'Cart is empty',
-                style: TextStyle(color: Colors.black54, fontSize: 16),
+                context.tr('cart_is_empty'),
+                style: const TextStyle(color: Colors.black54, fontSize: 16),
               ),
+              // child: Text(
+              //   'Cart is empty',
+              //   style: TextStyle(color: Colors.black54, fontSize: 16),
+              // ),
             );
           }
 
@@ -211,9 +222,18 @@ class CartScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'ITEMS',
-                                style: TextStyle(
+                              // const Text(
+                              //   'ITEMS',
+                              //   style: TextStyle(
+                              //     color: Colors.grey,
+                              //     fontSize: 10,
+                              //     fontWeight: FontWeight.bold,
+                              //     letterSpacing: 0.5,
+                              //   ),
+                              // ),
+                              Text(
+                                context.tr('items_label'),
+                                style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -239,9 +259,18 @@ class CartScreen extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          const Text(
-                            'TOTAL',
-                            style: TextStyle(
+                          // const Text(
+                          //   'TOTAL',
+                          //   style: TextStyle(
+                          //     color: Colors.grey,
+                          //     fontSize: 12,
+                          //     fontWeight: FontWeight.bold,
+                          //     letterSpacing: 0.5,
+                          //   ),
+                          // ),
+                          Text(
+                            context.tr('total_label'),
+                            style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -276,7 +305,8 @@ class CartScreen extends StatelessWidget {
                   ),
                   onPressed: () async {
                     // Check subscription before allowing checkout
-                    final canProceed = await SubscriptionHelper.checkAndEnforcePlan(context);
+                    final canProceed =
+                        await SubscriptionHelper.checkAndEnforcePlan(context);
                     if (!canProceed) return;
 
                     final bill = await controller.saveBill();
@@ -293,11 +323,25 @@ class CartScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.print_outlined, color: Colors.white),
                       const SizedBox(width: 12),
+
+                      // Expanded(
+                      //   child: Text(
+                      //     controller.editingBill != null
+                      //         ? 'UPDATE / PRINT BILL'
+                      //         : 'PAY / PRINT BILL',
+                      //     style: const TextStyle(
+                      //       color: Colors.white,
+                      //       fontWeight: FontWeight.bold,
+                      //       fontSize: 15,
+                      //       letterSpacing: 0.5,
+                      //     ),
+                      //   ),
+                      // ),
                       Expanded(
                         child: Text(
                           controller.editingBill != null
-                              ? 'UPDATE / PRINT BILL'
-                              : 'PAY / PRINT BILL',
+                              ? context.tr('update_print_bill')
+                              : context.tr('pay_print_bill'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -344,7 +388,7 @@ class CartScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
@@ -354,7 +398,7 @@ class CartScreen extends StatelessWidget {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'ADD MORE',
+                              context.tr('add_more'),
                               style: TextStyle(
                                 color: Colors.black87,
                                 fontWeight: FontWeight.bold,
@@ -379,7 +423,7 @@ class CartScreen extends StatelessWidget {
                           controller.clearCart();
                           Navigator.pop(context);
                         },
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
@@ -389,8 +433,8 @@ class CartScreen extends StatelessWidget {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'CLEAR',
-                              style: TextStyle(
+                              context.tr('clear'),
+                              style: const TextStyle(
                                 color: Colors.redAccent,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,

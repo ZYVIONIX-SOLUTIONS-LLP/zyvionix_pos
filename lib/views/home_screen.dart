@@ -19,7 +19,7 @@ import '../controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
 import '../utils/subscription_helper.dart';
 import '../controllers/language_controller.dart';
-import '../widgets/language_selector_sheet.dart';
+import '../controllers/theme_controller.dart';
 import 'onboarding/onboarding_showcase_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -325,42 +325,60 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Row(
               children: [
-                Consumer<LanguageController>(
-                  builder: (context, langController, _) {
+                Consumer<ThemeController>(
+                  builder: (context, themeController, _) {
+                    final isDark = themeController.isDarkMode;
                     return InkWell(
-                      onTap: () => LanguageSelectorSheet.show(context),
+                      onTap: () => themeController.toggleTheme(),
                       borderRadius: BorderRadius.circular(20),
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: isDark
+                              ? const Color(0xFF2B2A4C)
+                              : const Color(0xFFFFF6E5),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF6B46C1)
+                                : const Color(0xFFFFD166),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDark
+                                  ? Colors.purple.withValues(alpha: 0.2)
+                                  : Colors.amber.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              langController.currentLanguageFlag,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              langController.currentLanguageCode.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade800,
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                              child: Icon(
+                                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                                key: ValueKey(isDark),
+                                size: 18,
+                                color: isDark ? const Color(0xFFA78BFA) : const Color(0xFFF59E0B),
                               ),
                             ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 16,
-                              color: Colors.blue.shade800,
+                            const SizedBox(width: 5),
+                            Text(
+                              isDark ? context.tr('dark_mode') : context.tr('light_mode'),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? const Color(0xFFDDD6FE) : const Color(0xFFB45309),
+                              ),
                             ),
                           ],
                         ),
@@ -888,7 +906,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   context.tr('recent_bills'),
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : const Color(0xFF1E1E1E),
                   ),
@@ -1114,7 +1132,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               context.tr('report_analytics'),
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
                 letterSpacing: -0.3,

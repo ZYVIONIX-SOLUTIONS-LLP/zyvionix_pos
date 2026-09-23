@@ -180,7 +180,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               CustomTextField(
                 // label: 'Price (₹)',
                 // hint: 'Enter price',
-                label: context.tr('price_rupee'),
+                label: context.tr('item_price'),
                 hint: context.tr('enter_price'),
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -201,7 +201,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               CustomTextField(
                 // label: 'Category (Optional)',
                 // hint: 'e.g. Food, Drinks',
-                label: 'Category (Optional)',
+                label: context.tr('category_optional'),
                 hint: 'e.g. Food, Drinks',
                 controller: _categoryController,
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
@@ -15,7 +16,13 @@ class SelectAssignedShopScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-        title: const Text('Select Shop', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: Text(
+          context.tr('select_shop'),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -27,20 +34,25 @@ class SelectAssignedShopScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Assigned Shops',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+              Text(
+                context.tr('assigned_shops'),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Please select the shop you are currently working at. This will ensure your bills are recorded correctly.',
-                style: TextStyle(color: Colors.black54, fontSize: 14),
+              Text(
+                context.tr('select_shop_description'),
+                style: const TextStyle(color: Colors.black54, fontSize: 14),
               ),
               const SizedBox(height: 24),
               Expanded(
                 child: ListView.separated(
                   itemCount: assignedShops.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final shop = assignedShops[index];
                     return InkWell(
@@ -55,7 +67,9 @@ class SelectAssignedShopScreen extends StatelessWidget {
                           context.read<BillController>().init();
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const NavbarScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const NavbarScreen(),
+                            ),
                           );
                         }
                       },
@@ -80,7 +94,10 @@ class SelectAssignedShopScreen extends StatelessWidget {
                                 color: const Color(0xFF1EA1F2).withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.storefront_rounded, color: Color(0xFF1EA1F2)),
+                              child: const Icon(
+                                Icons.storefront_rounded,
+                                color: Color(0xFF1EA1F2),
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -89,19 +106,30 @@ class SelectAssignedShopScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     shop['name'] ?? 'Unknown Shop',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
                                   ),
-                                  if (shop['address'] != null && shop['address'].isNotEmpty) ...[
+                                  if (shop['address'] != null &&
+                                      shop['address'].isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Text(
                                       shop['address'],
-                                      style: const TextStyle(color: Colors.black54, fontSize: 13),
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ],
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                           ],
                         ),
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final String userId;
@@ -181,7 +182,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     print('useriddddddddddddddddddddddd ${widget.userId}');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.tr('notifications')),
         actions: [
           if (notifications.isNotEmpty)
             IconButton(

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 
 class HardwareOrdersScreen extends StatefulWidget {
@@ -87,9 +88,13 @@ class _HardwareOrdersScreenState extends State<HardwareOrdersScreen> {
           ? const Color(0xFF0F172A)
           : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'My  Orders',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        // title: const Text(
+        //   'My  Orders',
+        //   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        // ),
+        title: Text(
+          context.tr('my_orders'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         elevation: 0,
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,

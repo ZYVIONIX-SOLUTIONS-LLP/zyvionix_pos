@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -22,9 +23,9 @@ class HelpScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Help & Support',
-          style: TextStyle(
+        title: Text(
+          context.tr('help_support'),
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -38,17 +39,26 @@ class HelpScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'How can we help you?',
-                style: TextStyle(
+              Text(
+                context.tr('how_can_we_help'),
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E1E1E),
                 ),
               ),
               const SizedBox(height: 12),
+
+              // Text(
+              //   'It looks like you are experiencing problems with our process. We are here to help so please get in touch with us.',
+              //   style: TextStyle(
+              //     fontSize: 15,
+              //     color: Colors.grey.shade600,
+              //     height: 1.5,
+              //   ),
+              // ),
               Text(
-                'It looks like you are experiencing problems with our process. We are here to help so please get in touch with us.',
+                context.tr('help_description'),
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey.shade600,

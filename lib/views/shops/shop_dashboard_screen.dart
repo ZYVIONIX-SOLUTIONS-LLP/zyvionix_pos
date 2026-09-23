@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/views/reports/report_analytics.dart';
 import 'package:zyvionix_pos/widgets/primary_button.dart';
@@ -281,16 +282,20 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
               const SizedBox(height: 30),
 
               if (!widget.isActive) ...[
+                // PrimaryButton(
+                //   text: 'Set as Active Shop',
+                //   onPressed: () => _setActiveShop(context),
+                // ),
                 PrimaryButton(
-                  text: 'Set as Active Shop',
+                  text: context.tr('set_as_active_shop'),
                   onPressed: () => _setActiveShop(context),
                 ),
                 const SizedBox(height: 30),
               ],
 
-              const Text(
-                'Management',
-                style: TextStyle(
+              Text(
+                context.tr('management'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -303,10 +308,9 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   _buildMenuItem(
                     icon: Icons.people_outline_rounded,
                     iconColor: Colors.deepPurple,
-                    title: 'Employees',
-                    subtitle: 'Manage staff for this shop',
+                    title: context.tr('employees'),
+                    subtitle: context.tr('manage_staff_for_shop'),
                     onTap: () {
-
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -320,8 +324,8 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   _buildMenuItem(
                     icon: Icons.bar_chart_rounded,
                     iconColor: Colors.orange,
-                    title: 'Reports & Analytics',
-                    subtitle: 'View sales and performance',
+                    title: context.tr('reports_and_analytics'),
+                    subtitle: context.tr('view_sales_performance'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -341,8 +345,8 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   _buildMenuItem(
                     icon: Icons.settings_outlined,
                     iconColor: Colors.blueGrey,
-                    title: 'Shop Settings',
-                    subtitle: 'Edit details and preferences',
+                    title: context.tr('shop_settings'),
+                    subtitle: context.tr('edit_details_preferences'),
                     onTap: () {
                       Navigator.push(
                         context,

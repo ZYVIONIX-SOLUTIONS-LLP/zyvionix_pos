@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'dart:convert';
 import 'package:zyvionix_pos/views/hardware/hardware_address_checkout_screen.dart';
 
@@ -193,7 +194,7 @@ class HardwareDetailScreen extends StatelessWidget {
                   // Description Section
                   const SizedBox(height: 12),
                   Text(
-                    'Product Description',
+                    context.tr('product_description'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -287,9 +288,12 @@ class HardwareDetailScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Total Payable',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      Text(
+                        context.tr('total_payable'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
                       Text(
                         '₹${price.toStringAsFixed(0)}',
@@ -322,14 +326,14 @@ class HardwareDetailScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.shopping_bag_rounded, size: 18),
                           SizedBox(width: 8),
                           Text(
-                            'Buy Product Now',
-                            style: TextStyle(
+                            context.tr('buy_product_now'),
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                             ),

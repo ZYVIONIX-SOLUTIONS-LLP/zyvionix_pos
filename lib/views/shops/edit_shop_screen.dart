@@ -1,6 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -59,87 +60,83 @@ class _EditShopScreenState extends State<EditShopScreen> {
 
     final box = HiveBoxes.getSettingsBox();
 
-      // Save to Cloud via API
-      try {
-        final token = box.get('auth_token');
-        final response = await http.put(
-          Uri.parse('${ApiConstants.baseUrl}/shops/${widget.shop['_id']}'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'name': _nameController.text.trim(),
-            'address': _addressController.text.trim(),
-            'mobile': _mobileController.text.trim(),
-            'gst': _gstController.text.trim(),
-            'email': _emailController.text.trim(),
-            'status': widget.shop['status'] ?? 'Active',
-          }),
-        );
+    // Save to Cloud via API
+    try {
+      final token = box.get('auth_token');
+      final response = await http.put(
+        Uri.parse('${ApiConstants.baseUrl}/shops/${widget.shop['_id']}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': _nameController.text.trim(),
+          'address': _addressController.text.trim(),
+          'mobile': _mobileController.text.trim(),
+          'gst': _gstController.text.trim(),
+          'email': _emailController.text.trim(),
+          'status': widget.shop['status'] ?? 'Active',
+        }),
+      );
 
-        print(
-          'Response status code for update shopsssss ${response.statusCode}',
-        );
+      print('Response status code for update shopsssss ${response.statusCode}');
 
-        print('Response bodyyyyyyyyyyyy for update shopsssss ${response.body}');
+      print('Response bodyyyyyyyyyyyy for update shopsssss ${response.body}');
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final responseData = jsonDecode(response.body);
-          final updatedShop = responseData['shop'] ?? widget.shop;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        final updatedShop = responseData['shop'] ?? widget.shop;
 
-          final isCurrentShop =
-              box.get('current_shop_id') == widget.shop['_id'];
-          if (isCurrentShop) {
-            await box.put('shop_name', _nameController.text.trim());
-            await box.put(
-              'offline_company_address',
-              _addressController.text.trim(),
-            );
-            await box.put('shop_mobile', _mobileController.text.trim());
-          }
-
-          setState(() {
-            _isLoading = false;
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Shop updated successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pop(context, updatedShop);
-          }
-        } else {
-          final data = jsonDecode(response.body);
-          setState(() {
-            _isLoading = false;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data['message'] ?? 'Failed to update shop'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+        final isCurrentShop = box.get('current_shop_id') == widget.shop['_id'];
+        if (isCurrentShop) {
+          await box.put('shop_name', _nameController.text.trim());
+          await box.put(
+            'offline_company_address',
+            _addressController.text.trim(),
+          );
+          await box.put('shop_mobile', _mobileController.text.trim());
         }
-      } catch (e) {
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Shop updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, updatedShop);
+        }
+      } else {
+        final data = jsonDecode(response.body);
         setState(() {
           _isLoading = false;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Network error.'),
+            SnackBar(
+              content: Text(data['message'] ?? 'Failed to update shop'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
-
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildTextField({
@@ -192,7 +189,8 @@ class _EditShopScreenState extends State<EditShopScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        title: const Text('Edit Shop'),
+        // title: const Text('Edit Shop'),
+        title: Text(context.tr('edit_shop')),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -236,7 +234,12 @@ class _EditShopScreenState extends State<EditShopScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (_isLoading)
-                  const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+                  const Center(
+                    child: SpinKitFadingCircle(
+                      color: Color(0xFF1EA1F2),
+                      size: 50.0,
+                    ),
+                  )
                 else
                   ElevatedButton(
                     onPressed: _updateShop,
@@ -248,9 +251,17 @@ class _EditShopScreenState extends State<EditShopScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Update Shop',
-                      style: TextStyle(
+
+                    // child: const Text(
+                    //   'Update Shop',
+                    //   style: TextStyle(
+                    //     fontSize: 16,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    child: Text(
+                      context.tr('update_shop'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),

@@ -1,6 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:http/http.dart' as http;
@@ -140,9 +141,17 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios),
         ),
-        title: const Text(
-          'Add Employee',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+
+        // title: const Text(
+        //   'Add Employee',
+        //   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        // ),
+        title: Text(
+          context.tr('add_employee'),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -156,9 +165,16 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Employee Details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // const Text(
+                //   'Employee Details',
+                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // ),
+                Text(
+                  context.tr('employee_details'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
@@ -227,18 +243,36 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Assign to Shops',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+                // const Text(
+                //   'Assign to Shops',
+                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // ),
+                Text(
+                  context.tr('assign_to_shops'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Select which shops this employee can access.',
-                  style: TextStyle(color: Colors.black54),
+
+                // const Text(
+                //   'Select which shops this employee can access.',
+                //   style: TextStyle(color: Colors.black54),
+                // ),
+                Text(
+                  context.tr('select_employee_shops'),
+                  style: const TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
                 _isFetchingShops
-                    ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+                    ? const Center(
+                        child: SpinKitFadingCircle(
+                          color: Color(0xFF1EA1F2),
+                          size: 50.0,
+                        ),
+                      )
                     : Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -279,9 +313,14 @@ class _CreateEmployeeScreenState extends State<CreateEmployeeScreen> {
                       ),
                 const SizedBox(height: 40),
                 _isLoading
-                    ? const Center(child: SpinKitFadingCircle(color: Color(0xFF1EA1F2), size: 50.0))
+                    ? const Center(
+                        child: SpinKitFadingCircle(
+                          color: Color(0xFF1EA1F2),
+                          size: 50.0,
+                        ),
+                      )
                     : PrimaryButton(
-                        text: 'Save Employee',
+                        text: context.tr('save_employee'),
                         onPressed: _saveEmployee,
                       ),
               ],
