@@ -42,6 +42,33 @@ class _BillingScreenState extends State<BillingScreen> {
     super.dispose();
   }
 
+  void _showExitDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exit'),
+          content: const Text('Are you sure you want to exit?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.read<BottomNavbarProvider>().setIndex(0);
+              },
+              child: const Text('Exit', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final products = context.watch<ProductController>().products;
@@ -58,113 +85,119 @@ class _BillingScreenState extends State<BillingScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            context.read<BottomNavbarProvider>().setIndex(0);
-          },
-          icon: const Icon(Icons.arrow_back_ios),
-        ),
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search products...',
-                  border: InputBorder.none,
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val;
-                  });
-                },
-              )
-            : Text(
-                context.tr('products'),
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        elevation: 0,
-        centerTitle: !_isSearching,
-        automaticallyImplyLeading: false,
-        actions: [
-          if (!_isEmployee)
-            IconButton(
-              icon: const Icon(
-                Icons.add_rounded,
-                color: AppColors.primary,
-                size: 28,
-              ),
-              tooltip: 'Add Product',
-              onPressed: () async {
-                final canProceed = await SubscriptionHelper.checkAndEnforcePlan(
-                  context,
-                );
-                if (!canProceed) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddEditProductScreen(),
-                  ),
-                );
-              },
-            ),
-          if (_selectedProductIds.length == 1 && !_isEmployee)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
-              tooltip: 'Edit Product',
-              onPressed: () {
-                final selectedId = _selectedProductIds.first;
-                final selectedProduct = products.firstWhere(
-                  (p) => p.id == selectedId,
-                );
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        AddEditProductScreen(product: selectedProduct),
-                  ),
-                );
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            tooltip: 'Product List',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showExitDialog();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          leading: IconButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProductListScreen()),
-              );
+              context.read<BottomNavbarProvider>().setIndex(0);
             },
+            icon: const Icon(Icons.arrow_back_ios),
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              if (!_isSearching) _buildCategories(categories),
-              Expanded(
-                child: _isSearching
-                    ? _buildSearchResults(products)
-                    : _buildProductsGrid(products),
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search products...',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                )
+              : Text(
+                  context.tr('products'),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          elevation: 0,
+          centerTitle: !_isSearching,
+          automaticallyImplyLeading: false,
+          actions: [
+            if (!_isEmployee)
+              IconButton(
+                icon: const Icon(
+                  Icons.add_rounded,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
+                tooltip: 'Add Product',
+                onPressed: () async {
+                  final canProceed =
+                      await SubscriptionHelper.checkAndEnforcePlan(context);
+                  if (!canProceed) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddEditProductScreen(),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 100),
-            ],
-          ),
-          if (_selectedProductIds.isNotEmpty)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 25,
-              child: _buildBottomBar(products),
+            if (_selectedProductIds.length == 1 && !_isEmployee)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                tooltip: 'Edit Product',
+                onPressed: () {
+                  final selectedId = _selectedProductIds.first;
+                  final selectedProduct = products.firstWhere(
+                    (p) => p.id == selectedId,
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AddEditProductScreen(product: selectedProduct),
+                    ),
+                  );
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.list_alt),
+              tooltip: 'Product List',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProductListScreen()),
+                );
+              },
             ),
-        ],
+          ],
+        ),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                if (!_isSearching) _buildCategories(categories),
+                Expanded(
+                  child: _isSearching
+                      ? _buildSearchResults(products)
+                      : _buildProductsGrid(products),
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
+            if (_selectedProductIds.isNotEmpty)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 25,
+                child: _buildBottomBar(products),
+              ),
+          ],
+        ),
       ),
     );
   }

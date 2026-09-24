@@ -305,21 +305,21 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
 
               _buildMenuCard(
                 children: [
-                  _buildMenuItem(
-                    icon: Icons.people_outline_rounded,
-                    iconColor: Colors.deepPurple,
-                    title: context.tr('employees'),
-                    subtitle: context.tr('manage_staff_for_shop'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ManageEmployeesScreen(shopId: _shop['_id']),
-                        ),
-                      );
-                    },
-                  ),
+                  // _buildMenuItem(
+                  //   icon: Icons.people_outline_rounded,
+                  //   iconColor: Colors.deepPurple,
+                  //   title: context.tr('employees'),
+                  //   subtitle: context.tr('manage_staff_for_shop'),
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (context) =>
+                  //             ManageEmployeesScreen(shopId: _shop['_id']),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                   _divider(),
                   _buildMenuItem(
                     icon: Icons.bar_chart_rounded,

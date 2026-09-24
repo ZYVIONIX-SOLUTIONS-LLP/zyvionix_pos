@@ -357,6 +357,14 @@ class ApiService {
           if (data.containsKey('planExpiryDate') && data['planExpiryDate'] != null) {
             await box.put('planExpiryDate', data['planExpiryDate'].toString());
           }
+          if (data.containsKey('currentPlan') && data['currentPlan'] != null) {
+            final cp = data['currentPlan'];
+            if (cp is Map && (cp['_id'] != null || cp['id'] != null)) {
+              await box.put('current_plan_id', (cp['_id'] ?? cp['id']).toString());
+            } else if (cp is String) {
+              await box.put('current_plan_id', cp);
+            }
+          }
         }
         return data;
       }

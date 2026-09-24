@@ -461,6 +461,14 @@ class AuthProvider extends ChangeNotifier {
         }
         await box.put('hasActivePlan', data['user']['hasActivePlan'] ?? false);
         await box.put('is_new_user', data['user']['isNewUser'] ?? true);
+        if (data['user']['currentPlan'] != null) {
+          final cp = data['user']['currentPlan'];
+          if (cp is Map && (cp['_id'] != null || cp['id'] != null)) {
+            await box.put('current_plan_id', (cp['_id'] ?? cp['id']).toString());
+          } else if (cp is String) {
+            await box.put('current_plan_id', cp);
+          }
+        }
 
         if (data['user']['role'] == 'Employee') {
           await box.put('employee_name', data['user']['name']);

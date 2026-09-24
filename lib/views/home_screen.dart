@@ -11,6 +11,7 @@ import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:zyvionix_pos/models/bill.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/views/history/bill_history_screen.dart';
+import 'package:zyvionix_pos/screens/notifications_screen.dart';
 import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
 import 'billing/bill_preview_screen.dart';
@@ -33,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
   Timer? _timer;
   int _currentPage = 0;
+
+  String _shopName = 'My Shop';
   List<dynamic> _adminBanners = [];
 
   String _selectedReportFilter = 'Today';
@@ -51,9 +54,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadShopName() async {
+    final box = HiveBoxes.getSettingsBox();
+
+    final shopName = box.get(
+      'shop_name',
+      defaultValue: box.get('offline_company_name', defaultValue: 'My Shop'),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _shopName = shopName?.toString().trim().isNotEmpty == true
+          ? shopName.toString().trim()
+          : 'My Shop';
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+
+    _loadShopName();
     _fetchBanners();
     _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
       final maxPages = _adminBanners.isNotEmpty ? _adminBanners.length : 5;
@@ -144,6 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_) => const CreateShopScreen(isForced: true),
         ),
       );
+
+      await _loadShopName();
     }
 
     if (!mounted) return;
@@ -286,71 +310,98 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final box = HiveBoxes.getSettingsBox();
+    final cachedShopName = box.get(
+      'shop_name',
+      defaultValue: box.get('offline_company_name', defaultValue: 'My Shop'),
+    );
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: ApiService.getProfile(),
       builder: (context, snapshot) {
         final profile = snapshot.data;
-        final shopName =
-            profile?['companyName'] ??
-            HiveBoxes.getSettingsBox().get(
-              'shop_name',
-              defaultValue: 'Zyvionix Solutions',
-            );
+        String shopName = cachedShopName.toString();
+        if (shopName.isEmpty || shopName == 'Zyvionix Solutions') {
+          shopName = 'My Shop';
+        }
+
+        if (profile != null &&
+            profile.containsKey('companyName') &&
+            profile['companyName'] != null &&
+            profile['companyName'].toString().trim().isNotEmpty) {
+          shopName = profile['companyName'].toString().trim();
+          if (box.get('shop_name') != shopName) {
+            box.put('shop_name', shopName);
+          }
+        }
 
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  getGreeting(context),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                    fontWeight: FontWeight.w500,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    getGreeting(context),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  shopName,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
+                  const SizedBox(height: 2),
+
+                  // Text(
+                  //   shopName,
+                  //   maxLines: 1,
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: TextStyle(
+                  //     fontSize: 22,
+                  //     fontWeight: FontWeight.bold,
+                  //     color: isDark ? Colors.white : Colors.black87,
+                  //   ),
+                  // ),
+                  Text(
+                    _shopName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Row(
               children: [
                 Consumer<ThemeController>(
                   builder: (context, themeController, _) {
-                    final isDark = themeController.isDarkMode;
+                    final isDarkTheme = themeController.isDarkMode;
                     return InkWell(
                       onTap: () => themeController.toggleTheme(),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(14),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: isDark
+                          color: isDarkTheme
                               ? const Color(0xFF2B2A4C)
                               : const Color(0xFFFFF6E5),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isDark
+                            color: isDarkTheme
                                 ? const Color(0xFF6B46C1)
                                 : const Color(0xFFFFD166),
                             width: 1.2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: isDark
+                              color: isDarkTheme
                                   ? Colors.purple.withValues(alpha: 0.2)
                                   : Colors.amber.withValues(alpha: 0.2),
                               blurRadius: 6,
@@ -358,61 +409,67 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                              child: Icon(
-                                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                                key: ValueKey(isDark),
-                                size: 18,
-                                color: isDark ? const Color(0xFFA78BFA) : const Color(0xFFF59E0B),
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              isDark ? context.tr('dark_mode') : context.tr('light_mode'),
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFDDD6FE) : const Color(0xFFB45309),
-                              ),
-                            ),
-                          ],
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                          child: Icon(
+                            isDarkTheme
+                                ? Icons.dark_mode_rounded
+                                : Icons.light_mode_rounded,
+                            key: ValueKey(isDarkTheme),
+                            size: 20,
+                            color: isDarkTheme
+                                ? const Color(0xFFA78BFA)
+                                : const Color(0xFFF59E0B),
+                          ),
                         ),
                       ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
-                GestureDetector(
+                const SizedBox(width: 8),
+                InkWell(
                   onTap: () {
-                    context.read<BottomNavbarProvider>().setIndex(2);
+                    final userId = box.get('user_id', defaultValue: '');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NotificationsScreen(userId: userId),
+                      ),
+                    );
                   },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ZYVIONIX',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E3A8A),
-                          letterSpacing: 0.5,
-                        ),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E1E1E)
+                          : const Color(0xFFF0F4FF),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF333333)
+                            : const Color(0xFFD0E1FD),
+                        width: 1.2,
                       ),
-                      Text(
-                        'SOLUTIONS',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade600,
-                          letterSpacing: 0.5,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : const Color(0xFF165FF2).withValues(alpha: 0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.notifications_active_rounded,
+                      color: isDark
+                          ? const Color(0xFF1EA1F2)
+                          : const Color(0xFF165FF2),
+                      size: 20,
+                    ),
                   ),
                 ),
               ],

@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:zyvionix_pos/constants/api_constants.dart';
+import 'package:zyvionix_pos/database/hive_boxes.dart';
+import 'package:zyvionix_pos/services/api_service.dart';
+import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
+import 'package:zyvionix_pos/views/profile/profile_screen.dart';
 
 class SubscriptionLockScreen extends StatefulWidget {
   final String userId;
@@ -46,21 +50,41 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
 
   Future<void> _fetchPlans() async {
     try {
-      String? currentPlanId;
+      final Set<String> takenPlanIds = {};
+
+      // 1. Fetch current plan / purchased plans from profile
       try {
-        final profileRes = await http.get(
-          Uri.parse('${ApiConstants.baseUrl}/profile'),
-          headers: {'Authorization': 'Bearer ${widget.userToken}'},
-        );
-        if (profileRes.statusCode == 200) {
-          final profileData = jsonDecode(profileRes.body);
-          if (profileData['data'] != null &&
-              profileData['data']['currentPlan'] != null) {
-            currentPlanId = profileData['data']['currentPlan']['_id'];
+        final profileData = await ApiService.getProfile();
+        if (profileData != null) {
+          if (profileData['currentPlan'] != null) {
+            final cp = profileData['currentPlan'];
+            if (cp is Map) {
+              final id = (cp['_id'] ?? cp['id'])?.toString();
+              if (id != null && id.isNotEmpty) takenPlanIds.add(id);
+            } else if (cp is String && cp.isNotEmpty) {
+              takenPlanIds.add(cp);
+            }
+          }
+          if (profileData['purchasedPlans'] is List) {
+            for (var item in profileData['purchasedPlans']) {
+              if (item is Map) {
+                final id = (item['_id'] ?? item['id'])?.toString();
+                if (id != null && id.isNotEmpty) takenPlanIds.add(id);
+              } else if (item is String && item.isNotEmpty) {
+                takenPlanIds.add(item);
+              }
+            }
           }
         }
       } catch (e) {
         debugPrint('Error fetching profile: $e');
+      }
+
+      // 2. Fallback check from Hive cached current plan
+      final box = HiveBoxes.getSettingsBox();
+      final cachedPlanId = box.get('current_plan_id')?.toString();
+      if (cachedPlanId != null && cachedPlanId.isNotEmpty) {
+        takenPlanIds.add(cachedPlanId);
       }
 
       final response = await http.get(
@@ -68,17 +92,21 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final allPlans = data['data'] ?? [];
+        final List<dynamic> allPlans = data['data'] ?? [];
 
         setState(() {
-          plans = allPlans
-              .where(
-                (p) =>
-                    p['isDefaultTrial'] != true &&
-                    p['_id'] != currentPlanId &&
-                    p['status'] == 'Active',
-              )
-              .toList();
+          plans = allPlans.where((p) {
+            final isDefaultTrial = p['isDefaultTrial'] == true;
+            final isActive = p['status'] == 'Active';
+            final planId = (p['_id'] ?? p['id'])?.toString();
+            final isAlreadyTaken =
+                planId != null && takenPlanIds.contains(planId);
+
+            // Hide trial plan AND hide any plan already taken/purchased by the user
+            return !isDefaultTrial && isActive && !isAlreadyTaken;
+          }).toList();
+
+          _selectedIndex = 0;
           isLoading = false;
         });
       } else {
@@ -142,6 +170,69 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
     }
   }
 
+  // void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (ctx) => const AlertDialog(
+  //       backgroundColor: Color(0xFF1E1E22),
+  //       title: Text('Verifying Payment', style: TextStyle(color: Colors.white)),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           Text(
+  //             'Please wait while we verify your transaction...',
+  //             style: TextStyle(color: Colors.grey),
+  //           ),
+  //           SizedBox(height: 16),
+  //           CircularProgressIndicator(color: Color(0xFFF5C443)),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+
+  //   try {
+  //     final verifyRes = await http.post(
+  //       Uri.parse('${ApiConstants.baseUrl}/payments/verify-payment'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer ${widget.userToken}',
+  //       },
+  //       body: jsonEncode({
+  //         'razorpay_order_id': response.orderId,
+  //         'razorpay_payment_id': response.paymentId,
+  //         'razorpay_signature': response.signature,
+  //       }),
+  //     );
+
+  //     if (mounted) Navigator.pop(context);
+
+  //     if (verifyRes.statusCode == 200) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Payment Successful! Plan Upgraded.'),
+  //           backgroundColor: Color(0xFF10B981),
+  //         ),
+  //       );
+  //       if (mounted) {
+  //         Navigator.pop(context, true);
+  //       }
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Payment verification failed on server.'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) Navigator.pop(context);
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text('Verification error: $e')));
+  //   }
+  // }
+
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     showDialog(
       context: context,
@@ -187,7 +278,10 @@ class _SubscriptionLockScreenState extends State<SubscriptionLockScreen> {
           ),
         );
         if (mounted) {
-          Navigator.pop(context, true);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const NavbarScreen()),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
