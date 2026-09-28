@@ -33,17 +33,22 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F6FA),
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(Icons.arrow_back_ios, color: isDark ? Colors.white : Colors.black87),
         ),
-        title: Text(context.tr('subscription_plan')),
-        backgroundColor: Colors.white,
+        title: Text(
+          context.tr('subscription_plan'),
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
       ),
       body: SafeArea(
         child: _isLoading
@@ -53,12 +58,12 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
                   size: 50.0,
                 ),
               )
-            : _buildContent(),
+            : _buildContent(isDark),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(bool isDark) {
     if (_profile == null || _profile!['currentPlan'] == null) {
       // User has no active plan
       return Center(
@@ -69,15 +74,19 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
             children: [
               Icon(Icons.cloud_off, size: 80, color: Colors.grey.shade400),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'No Active Plan',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'You do not have an active Cloud Plan. Upgrade to access all features.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54),
               ),
               const SizedBox(height: 30),
               PrimaryButton(
@@ -226,9 +235,9 @@ class _ActivePlanScreenState extends State<ActivePlanScreen> {
             ),
           ),
           const SizedBox(height: 30),
-          const Text(
+          Text(
             'Need to renew or upgrade?',
-            style: TextStyle(color: Colors.black54, fontSize: 14),
+            style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),

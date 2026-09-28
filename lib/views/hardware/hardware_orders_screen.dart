@@ -88,10 +88,6 @@ class _HardwareOrdersScreenState extends State<HardwareOrdersScreen> {
           ? const Color(0xFF0F172A)
           : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        // title: const Text(
-        //   'My  Orders',
-        //   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        // ),
         title: Text(
           context.tr('my_orders'),
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

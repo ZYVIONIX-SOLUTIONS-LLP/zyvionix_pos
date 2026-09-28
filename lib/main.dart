@@ -1,10 +1,12 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/provider/navbar/navbar_provider.dart';
 import 'package:zyvionix_pos/provider/auth_provider.dart';
 import 'package:zyvionix_pos/views/auth/login_screen.dart';
+import 'package:zyvionix_pos/views/onboarding/onboarding_screen.dart';
 import 'package:zyvionix_pos/views/navbar/navbar_screen.dart';
 import 'constants/app_theme.dart';
 import 'database/hive_boxes.dart';
@@ -31,6 +33,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   try {
     await Firebase.initializeApp();
@@ -151,9 +158,16 @@ class _AppStartupHandlerState extends State<AppStartupHandler> {
           MaterialPageRoute(builder: (_) => const NavbarScreen()),
         );
       } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
+        final hasSeenOnboarding = box.get('has_seen_onboarding', defaultValue: false);
+        if (!hasSeenOnboarding) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        }
       }
     }
   }

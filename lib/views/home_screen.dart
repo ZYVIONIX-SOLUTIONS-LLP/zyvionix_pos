@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
@@ -16,7 +18,7 @@ import '../database/hive_boxes.dart';
 import '../services/api_service.dart';
 import 'billing/bill_preview_screen.dart';
 import '../controllers/bill_controller.dart';
-import '../controllers/product_controller.dart';
+// import '../controllers/product_controller.dart';
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
 import '../utils/subscription_helper.dart';
 import '../controllers/language_controller.dart';

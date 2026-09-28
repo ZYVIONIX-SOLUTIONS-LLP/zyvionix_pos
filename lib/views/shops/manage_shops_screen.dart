@@ -6,7 +6,6 @@ import 'package:zyvionix_pos/constants/api_constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:zyvionix_pos/views/shops/create_shop_screen.dart';
 import 'package:zyvionix_pos/views/shops/shop_dashboard_screen.dart';
-import 'package:floating_snackbar/floating_snackbar.dart';
 import 'package:zyvionix_pos/services/api_service.dart';
 
 class ManageShopsScreen extends StatefulWidget {
@@ -72,22 +71,37 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
-        title: Text(context.tr('manage_shops')),
-        backgroundColor: Colors.white,
+        title: Text(
+          context.tr('manage_shops'),
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildContent(),
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF1EA1F2)),
+              )
+            : _buildContent(isDark),
       ),
       floatingActionButton: _hasSubscription && (!_isBasePlan || _shops.isEmpty)
           ? FloatingActionButton.extended(
@@ -106,13 +120,16 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
               },
               backgroundColor: const Color(0xFF1EA1F2),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: Text(context.tr('new_shop')),
+              label: Text(
+                context.tr('new_shop'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             )
           : null,
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(bool isDark) {
     if (_shops.isEmpty) {
       return Center(
         child: Column(
@@ -121,12 +138,15 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
             Icon(
               Icons.storefront_outlined,
               size: 80,
-              color: Colors.grey.shade400,
+              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No Shops Found',
-              style: TextStyle(fontSize: 18, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 18,
+                color: isDark ? Colors.grey.shade300 : Colors.black54,
+              ),
             ),
           ],
         ),
@@ -160,16 +180,16 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: isActive
                   ? Border.all(color: const Color(0xFF1EA1F2), width: 2)
                   : null,
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x0A000000),
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                   blurRadius: 10,
-                  offset: Offset(0, 4),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -179,15 +199,15 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFF1EA1F2).withOpacity(0.1)
-                        : Colors.grey.shade100,
+                        ? const Color(0xFF1EA1F2).withOpacity(0.15)
+                        : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
                     color: isActive
                         ? const Color(0xFF1EA1F2)
-                        : Colors.grey.shade600,
+                        : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -197,9 +217,10 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                     children: [
                       Text(
                         shop['name'] ?? 'Unknown Shop',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                       if (shop['address'] != null &&
@@ -207,8 +228,8 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           shop['address'],
-                          style: const TextStyle(
-                            color: Colors.black54,
+                          style: TextStyle(
+                            color: isDark ? Colors.grey.shade400 : Colors.black54,
                             fontSize: 13,
                           ),
                         ),
@@ -236,10 +257,10 @@ class _ManageShopsScreenState extends State<ManageShopsScreen> {
                     ),
                   ),
                 if (!isActive)
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Colors.grey,
+                    color: isDark ? Colors.grey.shade500 : Colors.grey,
                   ),
               ],
             ),

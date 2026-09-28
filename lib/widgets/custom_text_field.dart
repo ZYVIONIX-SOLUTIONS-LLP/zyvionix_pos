@@ -107,12 +107,21 @@ class CustomTextField extends StatelessWidget {
             readOnly: readOnly,
             validator: validator,
             maxLines: maxLines,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
+            ),
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
               suffixIcon: suffixIcon,
               filled: readOnly,
-              fillColor: readOnly ? Colors.grey.shade100 : null,
+              fillColor: readOnly
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade800
+                      : Colors.grey.shade100)
+                  : null,
             ),
           ),
         ],

@@ -53,9 +53,36 @@ class ProductController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _syncProductsInBackground() async {
+    try {
+      final freshProducts = await ApiService.getProducts();
+      freshProducts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _products = freshProducts;
+      notifyListeners();
+    } catch (e) {
+      print('Background sync error: $e');
+    }
+  }
+
+  // Future<void> addProduct(Product product) async {
+  //   final success = await ApiService.addProduct(product);
+  //   if (success) await loadProducts();
+  // }
+
+  ///////////////// Newly added function to add the product to show the data fastly////////////////////////
+
   Future<void> addProduct(Product product) async {
+    _products.insert(0, product);
+    notifyListeners();
+
     final success = await ApiService.addProduct(product);
-    if (success) await loadProducts();
+
+    if (!success) {
+      _products.removeWhere((p) => p.id == product.id);
+      notifyListeners();
+    }
+
+    _syncProductsInBackground();
   }
 
   Future<void> updateProduct(Product product) async {

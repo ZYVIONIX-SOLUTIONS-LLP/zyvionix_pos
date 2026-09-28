@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zyvionix_pos/controllers/language_controller.dart';
 import 'package:zyvionix_pos/database/hive_boxes.dart';
-import 'package:zyvionix_pos/models/shop.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zyvionix_pos/constants/api_constants.dart';
@@ -127,6 +126,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
     bool isOptional = false,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
@@ -156,7 +156,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           prefixIcon: Icon(icon),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
+          fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         ),
       ),
     );
@@ -164,6 +164,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return WillPopScope(
       onWillPop: () async {
         return !widget.isForced;
@@ -182,7 +183,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F6FA),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),

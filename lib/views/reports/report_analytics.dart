@@ -66,14 +66,31 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(context.tr('report_analytics')),
+        title: Text(
+          context.tr('report_analytics'),
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: _loadData,
+          ),
         ],
       ),
       body: _isLoading
@@ -88,19 +105,17 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(),
+                    _buildHeader(isDark),
                     const SizedBox(height: 20),
-                    _buildOverviewCards(),
+                    _buildOverviewCards(isDark),
                     const SizedBox(height: 24),
-                    // _buildSectionTitle('Sales Distribution (Weekly)'),
-                    _buildSectionTitle(context.tr('sales_distribution_weekly')),
+                    _buildSectionTitle(context.tr('sales_distribution_weekly'), isDark),
                     const SizedBox(height: 12),
-                    _buildSalesChart(),
+                    _buildSalesChart(isDark),
                     const SizedBox(height: 24),
-                    // _buildSectionTitle('Top Selling Products'),
-                    _buildSectionTitle(context.tr('top_selling_products')),
+                    _buildSectionTitle(context.tr('top_selling_products'), isDark),
                     const SizedBox(height: 12),
-                    _buildTopProducts(),
+                    _buildTopProducts(isDark),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -109,32 +124,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.analytics_outlined, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'No Analytics Data',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create some bills to see insights here.',
-            style: TextStyle(color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     final now = DateTime.now();
     final formatter = DateFormat('MMMM yyyy');
     return Row(
@@ -145,32 +135,35 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
           children: [
             Text(
               context.tr('business_insights'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF111827),
+                color: isDark ? Colors.white : const Color(0xFF111827),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Overview for ${formatter.format(now)}',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
+              ),
             ),
           ],
         ),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: const Color(0xFF1EA1F2).withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.insights, color: Colors.blue),
+          child: const Icon(Icons.insights, color: Color(0xFF1EA1F2)),
         ),
       ],
     );
   }
 
-  Widget _buildOverviewCards() {
+  Widget _buildOverviewCards(bool isDark) {
     final overview = _analyticsData!['overview'] ?? {};
     final totalRevenue = (overview['totalRevenue'] ?? 0).toDouble();
     final totalBills = (overview['totalBills'] ?? 0).toInt();
@@ -181,6 +174,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     return Column(
       children: [
         _buildStatCard(
+          isDark: isDark,
           title: 'Total Revenue',
           value: currency.format(totalRevenue),
           icon: Icons.account_balance_wallet,
@@ -194,6 +188,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
           children: [
             Expanded(
               child: _buildStatCard(
+                isDark: isDark,
                 title: 'Total Bills',
                 value: totalBills.toString(),
                 icon: Icons.receipt_long,
@@ -206,6 +201,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatCard(
+                isDark: isDark,
                 title: 'Avg Order Value',
                 value: currency.format(avgOrderValue),
                 icon: Icons.shopping_cart,
@@ -222,6 +218,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
   }
 
   Widget _buildStatCard({
+    required bool isDark,
     required String title,
     required String value,
     required IconData icon,
@@ -231,11 +228,11 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
+            color: color.withOpacity(isDark ? 0.3 : 0.15),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -258,10 +255,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
+                    color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -270,10 +267,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
                 ),
@@ -285,23 +282,28 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF111827),
+        color: isDark ? Colors.white : const Color(0xFF111827),
       ),
     );
   }
 
-  Widget _buildSalesChart() {
+  Widget _buildSalesChart(bool isDark) {
     final salesTrend = _analyticsData!['salesTrend'] as List<dynamic>? ?? [];
     if (salesTrend.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 200,
-        child: Center(child: Text('Not enough data')),
+        child: Center(
+          child: Text(
+            'Not enough data',
+            style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -312,14 +314,15 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
 
     for (int i = 0; i < salesTrend.length; i++) {
       final rev = (salesTrend[i]['revenue'] ?? 0).toDouble();
-      if (i < 7)
+      if (i < 7) {
         week1 += rev;
-      else if (i < 14)
+      } else if (i < 14) {
         week2 += rev;
-      else if (i < 21)
+      } else if (i < 21) {
         week3 += rev;
-      else
+      } else {
         week4 += rev;
+      }
     }
 
     final values = [week4, week3, week2, week1];
@@ -338,11 +341,11 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
@@ -360,7 +363,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                   width: 200,
                   height: 200,
                   child: CustomPaint(
-                    painter: DonutChartPainter(values, colors),
+                    painter: DonutChartPainter(values, colors, isDark),
                   ),
                 ),
                 Column(
@@ -369,7 +372,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                     Text(
                       'Total Sales',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -377,10 +380,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                     const SizedBox(height: 4),
                     Text(
                       currency.format(totalSales),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Colors.black87,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                   ],
@@ -394,8 +397,9 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
             runSpacing: 16,
             alignment: WrapAlignment.center,
             children: List.generate(4, (index) {
-              if (totalSales > 0 && values[index] == 0)
+              if (totalSales > 0 && values[index] == 0) {
                 return const SizedBox.shrink();
+              }
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -412,7 +416,7 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
                     labels[index],
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey.shade700,
+                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -425,14 +429,14 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
     );
   }
 
-  Widget _buildTopProducts() {
+  Widget _buildTopProducts(bool isDark) {
     final topProducts = _analyticsData!['topProducts'] as List<dynamic>? ?? [];
     if (topProducts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Text(
           'No product data yet.',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey),
         ),
       );
     }
@@ -441,11 +445,11 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -455,8 +459,10 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: topProducts.length,
-        separatorBuilder: (context, index) =>
-            Divider(height: 1, color: Colors.grey.shade100),
+        separatorBuilder: (context, index) => Divider(
+          height: 1,
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        ),
         itemBuilder: (context, index) {
           final p = topProducts[index];
           final name = p['name'] ?? 'Unknown';
@@ -469,22 +475,31 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade50,
+              backgroundColor: isDark
+                  ? Colors.blue.withOpacity(0.2)
+                  : Colors.blue.shade50,
               child: Text(
                 '${index + 1}',
                 style: const TextStyle(
-                  color: Colors.blue,
+                  color: Color(0xFF1EA1F2),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             title: Text(
               name,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
             subtitle: Text(
               'Sold: $qty items',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                fontSize: 13,
+              ),
             ),
             trailing: Text(
               currency.format(rev),
@@ -504,8 +519,9 @@ class _ReportAnalyticsState extends State<ReportAnalytics>
 class DonutChartPainter extends CustomPainter {
   final List<double> values;
   final List<Color> colors;
+  final bool isDark;
 
-  DonutChartPainter(this.values, this.colors);
+  DonutChartPainter(this.values, this.colors, this.isDark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -521,7 +537,7 @@ class DonutChartPainter extends CustomPainter {
 
     // Subtle background track
     final trackPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = isDark ? Colors.grey.shade800 : Colors.grey.shade200
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(rect.center, rect.width / 2, trackPaint);
@@ -559,6 +575,8 @@ class DonutChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant DonutChartPainter oldDelegate) {
-    return oldDelegate.values != values || oldDelegate.colors != colors;
+    return oldDelegate.values != values ||
+        oldDelegate.colors != colors ||
+        oldDelegate.isDark != isDark;
   }
 }

@@ -113,50 +113,55 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          icon: Icon(Icons.arrow_back_ios),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
-        title: Text(context.tr('edit_profile')),
-        backgroundColor: Colors.white,
+        title: Text(
+          context.tr('edit_profile'),
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x0A000000),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: _isLoading
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: SpinKitThreeBounce(
-                            color: Colors.white,
-                            size: 20.0,
+      body: _isLoading
+          ? _buildLoadingScreen(isDark)
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                      )
-                    : Column(
+                        ],
+                      ),
+                      child: Column(
                         children: [
                           CustomTextField(
                             label: 'Email Address',
@@ -164,7 +169,10 @@ class _EditProfileState extends State<EditProfile> {
                             keyboardType: TextInputType.emailAddress,
                             prefixIcon: Icons.email_outlined,
                             readOnly: true,
-                            suffixIcon: Icon(Icons.lock),
+                            suffixIcon: Icon(
+                              Icons.lock,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            ),
                           ),
                           CustomTextField(
                             label: 'Phone Number',
@@ -172,26 +180,43 @@ class _EditProfileState extends State<EditProfile> {
                             keyboardType: TextInputType.phone,
                             prefixIcon: Icons.phone_outlined,
                             readOnly: true,
-                            suffixIcon: Icon(Icons.lock),
+                            suffixIcon: Icon(
+                              Icons.lock,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 32),
+                    PrimaryButton(
+                      text: context.tr('save_changes'),
+                      onPressed: _saveProfile,
+                      isLoading: _isSaving,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 32),
+            ),
+    );
+  }
 
-              // PrimaryButton(
-              //   text: 'Save Changes',
-              //   onPressed: _saveProfile,
-              //   isLoading: _isSaving,
-              // ),
-              PrimaryButton(
-                text: context.tr('save_changes'),
-                onPressed: _saveProfile,
-                isLoading: _isSaving,
-              ),
-            ],
+  Widget _buildLoadingScreen(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SpinKitCircle(color: Color(0xFF1EA1F2), size: 60.0),
+          const SizedBox(height: 24),
+          Text(
+            'Loading profile data...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.grey.shade400 : Colors.grey[600],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

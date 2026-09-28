@@ -8,7 +8,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:zyvionix_pos/controllers/product_controller.dart';
 import 'package:zyvionix_pos/controllers/bill_controller.dart';
-import 'package:zyvionix_pos/views/employees/manage_employees_screen.dart';
 import 'package:zyvionix_pos/views/shops/edit_shop_screen.dart';
 
 class ShopDashboardScreen extends StatefulWidget {
@@ -59,23 +58,28 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
         title: Text(
           _shop['name'] ?? 'Shop Dashboard',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -295,10 +299,10 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
 
               Text(
                 context.tr('management'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 16),

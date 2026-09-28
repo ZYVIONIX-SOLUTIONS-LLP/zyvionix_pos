@@ -146,6 +146,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
     bool isOptional = false,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
@@ -175,7 +176,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
           prefixIcon: Icon(icon),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
+          fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         ),
       ),
     );
@@ -183,6 +184,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -194,7 +196,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F6FA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
